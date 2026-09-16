@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Size Up: a multiplayer game about guessing how big things are next to each other.">
-<title>Size Up</title>
+<meta name="description" content="How Big? A multiplayer game about guessing how tall things are next to each other.">
+<title>How Big?</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=IBM+Plex+Mono:wght@500;600&family=Instrument+Sans:wght@400;500;600;700&family=Noto+Color+Emoji&display=swap">
@@ -156,7 +156,10 @@ input[type=text]:focus{border-color:var(--focus);background:var(--surface)}
 .stage-wrap{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--stage)}
 #stage{display:block;width:100%;height:clamp(250px,46vh,420px);touch-action:pan-y;cursor:ew-resize}
 #stage.still{cursor:default}
-.controls{display:grid;grid-template-columns:auto 1fr auto auto auto;gap:10px;align-items:center;margin-top:12px}
+.controls{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px 14px;align-items:center;margin-top:12px}
+.sizer{display:flex;align-items:center;gap:8px;min-width:0}
+.sizer input{flex:1;min-width:60px}
+.jump{height:36px;padding:0 10px;border-radius:18px;font:600 13px/1 var(--mono)}
 .step{width:42px;height:42px;border-radius:50%;padding:0;font-size:22px;line-height:1;display:grid;place-items:center}
 .readout{font:600 14px/1.1 var(--mono);font-variant-numeric:tabular-nums;min-width:10ch;text-align:right}
 .readout small{display:block;font:500 11px/1.3 var(--body);color:var(--muted)}
@@ -211,9 +214,11 @@ input[type=range]:disabled{opacity:.5;cursor:not-allowed}
   .rules{grid-template-columns:1fr;gap:12px}
   .scoring{grid-template-columns:1fr;gap:10px}
   .reveal{grid-template-columns:1fr}
-  .controls{grid-template-columns:auto 1fr auto;}
-  .controls .readout{grid-column:1 / 3;text-align:left}
-  .controls #btn-lock{grid-column:3}
+  .controls{grid-template-columns:minmax(0,1fr) auto}
+  .controls .sizer{grid-column:1 / -1}
+  .controls .readout{text-align:left}
+  .sizer{gap:6px}
+  .jump{padding:0 8px}
   .board li{grid-template-columns:26px auto minmax(0,1fr) 56px;gap:10px;padding:12px}
   .board .bars{display:none}
   .roundbar{gap:10px}
@@ -228,7 +233,7 @@ input[type=range]:disabled{opacity:.5;cursor:not-allowed}
 
 <div class="wrap">
   <header class="top">
-    <div class="brand"><i></i>Size Up</div>
+    <div class="brand"><i></i>How Big?</div>
     <div class="top-right">
       <span class="chip" id="room-chip" hidden></span>
       <button class="btn small" id="btn-leave" hidden>Leave room</button>
@@ -239,7 +244,7 @@ input[type=range]:disabled{opacity:.5;cursor:not-allowed}
   <!-- HOME -->
   <section class="screen" id="scr-home">
     <div class="hero">
-      <h1 class="title">Size <span>Up</span></h1>
+      <h1 class="title">How <span>Big?</span></h1>
       <div class="tape-strip" aria-hidden="true" id="tape-strip"></div>
       <p class="tagline">Two things, side by side. Stretch the second one until their heights are to scale. Closest guess wins.</p>
     </div>
@@ -269,7 +274,7 @@ input[type=range]:disabled{opacity:.5;cursor:not-allowed}
 
     <div class="rules">
       <div class="rule"><b>1. Read the reference</b><p>The first object is shown with its real height, like a compact car at 1.44 m tall.</p></div>
-      <div class="rule"><b>2. Resize the second</b><p>Drag the slider, or drag sideways across the picture, to make it taller or shorter.</p></div>
+      <div class="rule"><b>2. Resize the second</b><p>Drag the slider or the picture to make it taller or shorter. Use ×10 and ÷10 for big jumps.</p></div>
       <div class="rule"><b>3. Lock in by 20 s</b><p>Ten rounds per game. Everyone in the room gets the same pairs.</p></div>
     </div>
 
@@ -278,7 +283,7 @@ input[type=range]:disabled{opacity:.5;cursor:not-allowed}
       <div class="scale-row">
         <div class="scale-bar" aria-hidden="true"></div>
         <div class="scale-lbl"><span><b>0</b> at ½ size</span><span><b>68</b> at 0.8×</span><span><b>100</b> within 3%</span><span><b>68</b> at 1.25×</span><span><b>0</b> at 2×</span></div>
-        <p class="note">Scores follow how many times too big or too small you were, so 2× too big costs the same as ½ size. Not touching the slider scores 0.</p>
+        <p class="note">Scores follow how many times too big or too small you were, so 2× too big costs the same as ½ size. When the two heights are far apart the scale widens: if one is 1,000× taller than the other, you keep scoring until you're 8× off. Not touching the slider scores 0.</p>
       </div>
     </div>
   </section>
@@ -327,9 +332,13 @@ input[type=range]:disabled{opacity:.5;cursor:not-allowed}
 
     <div id="play-ui">
       <div class="controls">
-        <button class="btn step" id="btn-minus" aria-label="Shrink">−</button>
-        <input type="range" id="size" min="0" max="1000" step="1" value="500" aria-label="Size of the second object">
-        <button class="btn step" id="btn-plus" aria-label="Grow">+</button>
+        <div class="sizer">
+          <button class="btn jump" id="btn-div10" aria-label="Divide the height by 10">÷10</button>
+          <button class="btn step" id="btn-minus" aria-label="A little shorter">−</button>
+          <input type="range" id="size" min="0" max="4000" step="1" value="2000" aria-label="Height of the second object">
+          <button class="btn step" id="btn-plus" aria-label="A little taller">+</button>
+          <button class="btn jump" id="btn-mul10" aria-label="Multiply the height by 10">×10</button>
+        </div>
         <div class="readout" id="readout">1.00×</div>
         <button class="btn primary" id="btn-lock">Lock in</button>
       </div>
@@ -451,6 +460,22 @@ const RAW = [
   ['burj',null,'the Burj Khalifa',828,'','Burj Khalifa'],
   ['fuji','🗻','Mount Fuji',3776,'above sea level','Mount Fuji'],
   ['everest','🏔️','Mount Everest',8849,'above sea level','Mount Everest'],
+  ['dangi',null,'Chandra Bahadur Dangi, the shortest adult on record',0.546,'Guinness World Record','Chandra Bahadur Dangi'],
+  ['biles',null,'Simone Biles',1.42,'listed height','Simone Biles'],
+  ['bogues',null,'Muggsy Bogues',1.6,'listed height','Muggsy Bogues'],
+  ['messi',null,'Lionel Messi',1.7,'listed height','Lionel Messi'],
+  ['clark',null,'Caitlin Clark',1.83,'listed height','Caitlin Clark'],
+  ['curry',null,'Stephen Curry',1.88,'listed height','Stephen Curry'],
+  ['bolt',null,'Usain Bolt',1.95,'listed height','Usain Bolt'],
+  ['lebron',null,'LeBron James',2.06,'listed height','LeBron James'],
+  ['shaq',null,"Shaquille O'Neal",2.16,'listed height',"Shaquille O'Neal"],
+  ['wemby',null,'Victor Wembanyama',2.24,'listed height','Victor Wembanyama'],
+  ['yao',null,'Yao Ming',2.29,'listed height','Yao Ming'],
+  ['zeng',null,'Zeng Jinlian, the tallest woman on record',2.463,'Guinness World Record','Zeng Jinlian'],
+  ['wadlow',null,'Robert Wadlow, the tallest person on record',2.72,'Guinness World Record','Robert Wadlow'],
+  ['a380',null,'an Airbus A380 jet',24,'to the top of the tail','Airbus A380'],
+  ['titanic',null,'the Titanic',53.3,'keel to the top of the funnels','Titanic'],
+  ['shuttle',null,'a Space Shuttle on the launch pad',56,'full launch stack','Space Shuttle'],
 ];
 const cap0 = s => s.charAt(0).toUpperCase() + s.slice(1);
 const OBJ = RAW.map(([id, e, a, s, note, label]) => {
@@ -736,18 +761,843 @@ const ART = {
   }},
 };
 
+/* generic person outline (not a likeness); only the shirt colour changes */
+function personArt(shirt) {
+  const half = [[0.5, 0.125], [0.43, 0.125], [0.42, 0.15], [0.22, 0.165], [0.15, 0.19], [0.1, 0.33], [0.05, 0.53], [0.13, 0.54],
+    [0.18, 0.37], [0.23, 0.3], [0.25, 0.5], [0.28, 0.965], [0.2, 1], [0.46, 1], [0.46, 0.965], [0.48, 0.6], [0.5, 0.57]];
+  return {aspect: 0.3, shade: null, draw(c, w, h) {
+    const lw = Math.max(1, h * 0.008);
+    P(c, w, h, symP(half));
+    c.fillStyle = '#E3E8ED'; c.fill();
+    c.save(); c.clip();
+    R(c, w, h, 0, 0.14, 1, 0.5, shirt);
+    R(c, w, h, 0, 0.5, 1, 0.64, '#4B5561');
+    c.restore();
+    P(c, w, h, symP(half));
+    c.strokeStyle = '#34404C'; c.lineWidth = lw; c.lineJoin = 'round'; c.stroke();
+    c.beginPath(); c.ellipse(0.5 * w, 0.064 * h, 0.17 * w, 0.058 * h, 0, 0, Math.PI * 2);
+    c.fillStyle = '#E3E8ED'; c.fill(); c.stroke();
+  }};
+}
+Object.assign(ART, {
+  dangi: personArt('#8E9AA6'),
+  biles: personArt('#3558A8'),
+  bogues: personArt('#1D8C8C'),
+  messi: personArt('#6CACE4'),
+  clark: personArt('#E0782B'),
+  curry: personArt('#1D428A'),
+  bolt: personArt('#E8B90C'),
+  lebron: personArt('#7A2E3A'),
+  shaq: personArt('#5B2C83'),
+  wemby: personArt('#8A9199'),
+  yao: personArt('#C8102E'),
+  zeng: personArt('#8E9AA6'),
+  wadlow: personArt('#8E9AA6'),
+
+  a380: {aspect: 3.04, shade: null, draw(c, w, h) {
+    const wh = '#F4F5F7', gr = '#AEB6BE', dk = '#2A3038';
+    // tail fin and stabiliser
+    fillP(c, w, h, [[0.8, 0.52], [0.9, 0.0], [0.975, 0.0], [0.97, 0.52]], '#2E5C9A');
+    fillP(c, w, h, [[0.86, 0.5], [0.99, 0.44], [0.995, 0.5], [0.9, 0.56]], gr);
+    // fuselage (double deck)
+    c.beginPath();
+    c.moveTo(0.06 * w, 0.85 * h);
+    c.bezierCurveTo(0.0, 0.84 * h, -0.005 * w, 0.58 * h, 0.07 * w, 0.52 * h);
+    c.lineTo(0.8 * w, 0.49 * h); c.lineTo(0.985 * w, 0.52 * h); c.lineTo(0.985 * w, 0.58 * h);
+    c.lineTo(0.8 * w, 0.85 * h); c.closePath();
+    c.fillStyle = wh; c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke();
+    R(c, w, h, 0.06, 0.8, 0.82, 0.85, '#D5DAE0');
+    c.fillStyle = '#58687A';
+    for (let u = 0.1; u < 0.78; u += 0.022) { c.fillRect(u * w, 0.58 * h, Math.max(0.5, w * 0.006), Math.max(0.5, h * 0.03)); c.fillRect(u * w, 0.69 * h, Math.max(0.5, w * 0.006), Math.max(0.5, h * 0.03)); }
+    fillP(c, w, h, [[0.025, 0.6], [0.05, 0.56], [0.06, 0.62], [0.03, 0.63]], '#58687A');
+    // wing, engines, gear
+    fillP(c, w, h, [[0.3, 0.72], [0.62, 0.7], [0.66, 0.74], [0.3, 0.77]], gr);
+    for (const u of [0.36, 0.5]) {
+      c.beginPath(); c.ellipse(u * w, 0.86 * h, 0.05 * w, 0.055 * h, 0, 0, Math.PI * 2); c.fillStyle = '#C3CAD1'; c.fill(); c.strokeStyle = EDGE; c.stroke();
+      R(c, w, h, u - 0.052, 0.84, u - 0.045, 0.88, dk);
+    }
+    for (const [u, n] of [[0.14, 1], [0.55, 3]]) {
+      R(c, w, h, u + 0.01, 0.85, u + 0.016, 0.95, '#6B737C');
+      for (let k = 0; k < n; k++) { c.beginPath(); c.arc((u + k * 0.028) * w, 0.965 * h, 0.035 * h, 0, Math.PI * 2); c.fillStyle = dk; c.fill(); }
+    }
+  }},
+  titanic: {aspect: 5.05, shade: null, draw(c, w, h) {
+    // funnels (buff with black tops), slightly raked
+    for (const u of [0.3, 0.42, 0.54, 0.66]) {
+      fillP(c, w, h, [[u, 0.34], [u + 0.012, 0], [u + 0.052, 0], [u + 0.04, 0.34]], '#D9A441');
+      fillP(c, w, h, [[u + 0.009, 0.07], [u + 0.012, 0], [u + 0.052, 0], [u + 0.05, 0.07]], '#1F2226');
+    }
+    c.strokeStyle = '#3B3F44'; c.lineWidth = Math.max(0.6, w * 0.0025);
+    for (const u of [0.12, 0.86]) { c.beginPath(); c.moveTo(u * w, 0.46 * h); c.lineTo((u + 0.01) * w, 0.08 * h); c.stroke(); }
+    // superstructure
+    R(c, w, h, 0.2, 0.31, 0.84, 0.47, '#F2F0EA');
+    R(c, w, h, 0.26, 0.26, 0.76, 0.31, '#F2F0EA');
+    c.fillStyle = '#6A6F75';
+    for (let u = 0.22; u < 0.82; u += 0.012) c.fillRect(u * w, 0.37 * h, Math.max(0.5, w * 0.004), Math.max(0.5, h * 0.03));
+    // hull: black topsides, white band, red below the waterline
+    fillP(c, w, h, [[0.0, 0.44], [0.97, 0.44], [1, 0.5], [0.985, 0.8], [0.93, 1], [0.05, 1], [0.03, 0.8]], '#1F2226');
+    R(c, w, h, 0.004, 0.44, 0.975, 0.47, '#F2F0EA');
+    fillP(c, w, h, [[0.03, 0.8], [0.985, 0.8], [0.93, 1], [0.05, 1]], '#9C2F24');
+    c.fillStyle = '#C9CCD0';
+    for (let u = 0.05; u < 0.95; u += 0.016) c.fillRect(u * w, 0.58 * h, Math.max(0.5, w * 0.003), Math.max(0.5, h * 0.018));
+  }},
+  shuttle: {aspect: 0.42, shade: 0.5, draw(c, w, h) {
+    const wh = '#F2F2EF', bk = '#23272B';
+    // boosters
+    for (const u of [0.12, 0.74]) {
+      R(c, w, h, u, 0.22, u + 0.14, 0.95, wh);
+      fillP(c, w, h, [[u, 0.22], [u + 0.07, 0.17], [u + 0.14, 0.22]], wh);
+      fillP(c, w, h, [[u + 0.02, 0.95], [u + 0.12, 0.95], [u + 0.14, 1], [u, 1]], '#555B60');
+      c.strokeStyle = EDGE; c.lineWidth = 1; c.strokeRect(u * w, 0.22 * h, 0.14 * w, 0.73 * h);
+    }
+    // external tank
+    R(c, w, h, 0.3, 0.1, 0.7, 0.84, '#C8702E');
+    c.beginPath(); c.moveTo(0.3 * w, 0.1 * h); c.quadraticCurveTo(0.5 * w, -0.1 * h, 0.7 * w, 0.1 * h); c.closePath(); c.fillStyle = '#C8702E'; c.fill();
+    R(c, w, h, 0.3, 0.3, 0.7, 0.31, '#A85A22');
+    // orbiter, nose up, belly facing us
+    c.beginPath();
+    c.moveTo(0.5 * w, 0.3 * h);
+    c.quadraticCurveTo(0.6 * w, 0.32 * h, 0.6 * w, 0.42 * h);
+    c.lineTo(0.6 * w, 0.72 * h); c.lineTo(0.86 * w, 0.9 * h); c.lineTo(0.86 * w, 0.94 * h);
+    c.lineTo(0.14 * w, 0.94 * h); c.lineTo(0.14 * w, 0.9 * h); c.lineTo(0.4 * w, 0.72 * h);
+    c.lineTo(0.4 * w, 0.42 * h); c.quadraticCurveTo(0.4 * w, 0.32 * h, 0.5 * w, 0.3 * h);
+    c.closePath(); c.fillStyle = bk; c.fill();
+    fillP(c, w, h, [[0.44, 0.45], [0.56, 0.45], [0.56, 0.9], [0.44, 0.9]], '#3A4047');
+    fillP(c, w, h, [[0.3, 0.9], [0.4, 0.84], [0.6, 0.84], [0.7, 0.9]], '#3A4047');
+  }},
+});
+
+
+/* ---------------- 100 more objects (heights checked Sept 2026: Wikipedia, Guinness, sport and industry standards) ---------------- */
+const RAW2 = [
+  ['die','🎲','a six-sided die',0.016,'standard size','Die'],
+  ['quarter','🪙','a US quarter',0.0243,'standing on its edge','US quarter'],
+  ['pingpong',null,'a ping-pong ball',0.04,'',''],
+  ['golfball',null,'a golf ball',0.0427,'',''],
+  ['tennisball',null,'a tennis ball',0.067,'',''],
+  ['crayon',null,'a crayon',0.092,'standard size',''],
+  ['mug',null,'a coffee mug',0.095,'typical 11-ounce mug','Coffee mug'],
+  ['elfowl','🦉','an elf owl',0.135,'the smallest owl, perched upright','Elf owl'],
+  ['sodacan',null,'a 12-ounce soda can',0.122,'','Soda can'],
+  ['pencil',null,'a pencil',0.19,'unsharpened',''],
+  ['chihuahua',null,'a Chihuahua',0.2,'at the shoulder',''],
+  ['paper',null,'a sheet of letter paper',0.279,'standing on its short edge','Letter paper'],
+  ['winebottle',null,'a wine bottle',0.3,'standard 750 ml bottle','Wine bottle'],
+  ['ruler',null,'a 12-inch ruler',0.305,'standing on end','Ruler'],
+  ['bowlingpin',null,'a bowling pin',0.381,'',''],
+  ['hornedowl','🦉','a great horned owl',0.55,'average length, perched upright','Great horned owl'],
+  ['suitcase',null,'a carry-on suitcase',0.56,'common airline size limit','Carry-on suitcase'],
+  ['labrador','🦮','a Labrador retriever',0.57,'at the shoulder','Labrador'],
+  ['gshepherd','🐕‍🦺','a German shepherd',0.63,'at the shoulder','German shepherd'],
+  ['cone',null,'a highway traffic cone',0.71,'','Traffic cone'],
+  ['macaw',null,'a scarlet macaw',0.84,'including its long tail','Scarlet macaw'],
+  ['zeus',null,'Zeus, the tallest dog on record',1.046,'Guinness World Record, 2022','Zeus (Great Dane)'],
+  ['hockeygoal',null,'a hockey goal',1.22,'',''],
+  ['ostrich',null,'a male ostrich',2.4,'','Ostrich'],
+  ['highjump',null,'the men\'s high jump world record',2.45,'bar height, set in 1993','High jump record'],
+  ['container',null,'a shipping container',2.59,'standard 8 ft 6 in',''],
+  ['cessna',null,'a Cessna 172 plane',2.72,'','Cessna 172'],
+  ['semitruck','🚛','a semi-truck',4.11,'common US height limit','Semi-truck'],
+  ['routemaster',null,'a London double-decker bus',4.38,'classic Routemaster','Double-decker bus'],
+  ['diving',null,'an Olympic diving platform',10,'top platform','Diving platform'],
+  ['sunflower','🌻','the tallest sunflower on record',10.9,'Guinness World Record','Record sunflower'],
+  ['greenmonster',null,'the Green Monster at Fenway Park',11.33,'','Green Monster'],
+  ['parthenon','🏛️','the Parthenon',13.72,'as built','Parthenon'],
+  ['goalpost',null,'an NFL goalpost',13.7,'crossbar plus uprights','NFL goalpost'],
+  ['b747',null,'a Boeing 747-8 jet',19.5,'to the top of the tail','Boeing 747-8'],
+  ['brandenburg',null,'the Brandenburg Gate',26,'including the statue on top','Brandenburg Gate'],
+  ['whitetower',null,'the White Tower at the Tower of London',27,'','White Tower'],
+  ['elcastillo',null,'El Castillo at Chichén Itzá',30,'including the temple on top','El Castillo'],
+  ['arctriomphe',null,'the Arc de Triomphe',49.5,'','Arc de Triomphe'],
+  ['horseshoe',null,'Horseshoe Falls at Niagara',51,'total drop','Horseshoe Falls'],
+  ['hatteras',null,'the Cape Hatteras Lighthouse',60.5,'','Cape Hatteras Light'],
+  ['towerbridge',null,'Tower Bridge in London',65,'its towers','Tower Bridge'],
+  ['falcon9',null,'a Falcon 9 rocket',70,'','Falcon 9'],
+  ['sherman','🌲','General Sherman, the giant sequoia',83.8,'','General Sherman tree'],
+  ['flatiron',null,'the Flatiron Building',93.6,'','Flatiron Building'],
+  ['sls',null,'an SLS moon rocket',98,'with the Orion capsule','SLS rocket'],
+  ['atomium',null,'the Atomium',102,'','Atomium'],
+  ['victoriafalls',null,'Victoria Falls',108,'total drop','Victoria Falls'],
+  ['harbourbridge',null,'the Sydney Harbour Bridge',134,'top of the arch, above the water','Sydney Harbour Bridge'],
+  ['blackpool',null,'Blackpool Tower',158.1,'','Blackpool Tower'],
+  ['highroller','🎡','the High Roller wheel in Las Vegas',167.6,'','High Roller'],
+  ['flagpole',null,'the Jeddah Flagpole',171,'','Jeddah Flagpole'],
+  ['gherkin',null,'the Gherkin in London',180,'','The Gherkin'],
+  ['threegorges',null,'the Three Gorges Dam',181,'','Three Gorges Dam'],
+  ['hoover',null,'the Hoover Dam',221.4,'','Hoover Dam'],
+  ['aindubai','🎡','the Ain Dubai wheel',250,'','Ain Dubai'],
+  ['transamerica',null,'the Transamerica Pyramid',260,'','Transamerica Pyramid'],
+  ['devilstower',null,'Devils Tower',264,'summit to base','Devils Tower'],
+  ['shard',null,'the Shard in London',309.6,'','The Shard'],
+  ['chrysler',null,'the Chrysler Building',319,'','Chrysler Building'],
+  ['burjalarab',null,'the Burj Al Arab',321,'','Burj Al Arab'],
+  ['skytower',null,'the Sky Tower in Auckland',328,'','Sky Tower'],
+  ['macau',null,'Macau Tower',338,'','Macau Tower'],
+  ['uluru',null,'Uluru',348,'above the surrounding plain','Uluru'],
+  ['strat',null,'the Strat tower in Las Vegas',350.2,'','The Strat'],
+  ['berlintv',null,'the Berlin TV Tower',368,'','Berlin TV Tower'],
+  ['sugarloaf',null,'Sugarloaf Mountain in Rio',396,'above the harbor','Sugarloaf Mountain'],
+  ['willis',null,'the Willis Tower',442.1,'to the roof','Willis Tower'],
+  ['petronas',null,'the Petronas Towers',451.9,'','Petronas Towers'],
+  ['lakhta',null,'the Lakhta Center',462,'','Lakhta Center'],
+  ['taipei101',null,'Taipei 101',508,'','Taipei 101'],
+  ['ostankino',null,'Ostankino Tower',540.1,'','Ostankino Tower'],
+  ['lotte',null,'Lotte World Tower',554.5,'','Lotte World Tower'],
+  ['pingan',null,'the Ping An Finance Centre',599.1,'','Ping An Finance Centre'],
+  ['canton',null,'Canton Tower',602,'','Canton Tower'],
+  ['kvly',null,'the KVLY-TV mast',605.6,'','KVLY-TV mast'],
+  ['shanghai',null,'Shanghai Tower',632,'','Shanghai Tower'],
+  ['merdeka',null,'Merdeka 118',678.9,'','Merdeka 118'],
+  ['yosemitefalls',null,'Yosemite Falls',739,'total drop','Yosemite Falls'],
+  ['elcapitan',null,'El Capitan',914,'base to summit','El Capitan'],
+  ['angelfalls',null,'Angel Falls',979,'total drop, the tallest waterfall','Angel Falls'],
+  ['tablemtn',null,'Table Mountain',1085,'above sea level','Table Mountain'],
+  ['vesuvius','🌋','Mount Vesuvius',1281,'above sea level','Mount Vesuvius'],
+  ['bennevis',null,'Ben Nevis',1345,'above sea level','Ben Nevis'],
+  ['mtwashington',null,'Mount Washington',1917,'above sea level','Mount Washington'],
+  ['kosciuszko',null,'Mount Kosciuszko',2228,'above sea level','Mount Kosciuszko'],
+  ['sthelens',null,'Mount St. Helens',2549,'above sea level','Mount St. Helens'],
+  ['olympus',null,'Mount Olympus in Greece',2918,'above sea level','Mount Olympus'],
+  ['kinabalu',null,'Mount Kinabalu',4095,'above sea level','Mount Kinabalu'],
+  ['maunakea',null,'Mauna Kea',4207,'above sea level','Mauna Kea'],
+  ['rainier',null,'Mount Rainier',4392,'above sea level','Mount Rainier'],
+  ['whitney',null,'Mount Whitney',4421,'above sea level','Mount Whitney'],
+  ['matterhorn',null,'the Matterhorn',4478,'above sea level','Matterhorn'],
+  ['kenya',null,'Mount Kenya',5199,'above sea level','Mount Kenya'],
+  ['elbrus',null,'Mount Elbrus',5642,'above sea level','Mount Elbrus'],
+  ['kilimanjaro',null,'Mount Kilimanjaro',5895,'above sea level','Kilimanjaro'],
+  ['denali',null,'Denali',6190,'above sea level','Denali'],
+  ['aconcagua',null,'Aconcagua',6961,'above sea level','Aconcagua'],
+  ['k2',null,'K2',8611,'above sea level','K2'],
+  ['olympusmons',null,'Olympus Mons on Mars',21287,'above the Martian datum','Olympus Mons (Mars)'],
+];
+for (const [id, e, a, s, note, label] of RAW2) {
+  const noun = a.replace(/^(an?|the) /, '');
+  const o = {id, e, a, s, note, noun, label: label || cap0(noun)};
+  OBJ.push(o); BY[id] = o;
+}
+
+/* ---------------- drawing helpers for the new art ---------------- */
+function E(c, w, h, u, v, ru, rv, fill, line) { c.beginPath(); c.ellipse(u * w, v * h, ru * w, rv * h, 0, 0, Math.PI * 2); c.fillStyle = fill; c.fill(); if (line) { c.strokeStyle = line; c.lineWidth = 1; c.stroke(); } }
+function L(c, w, h, pts, color, lw) { c.beginPath(); pts.forEach(([u, v], i) => i ? c.lineTo(u * w, v * h) : c.moveTo(u * w, v * h)); c.strokeStyle = color; c.lineWidth = lw; c.stroke(); }
+function grid(c, w, h, u0, v0, u1, v1, nu, nv, color) {
+  c.fillStyle = color;
+  const du = (u1 - u0) / nu, dv = (v1 - v0) / nv, cw = Math.max(0.5, du * w * 0.45), ch = Math.max(0.5, dv * h * 0.5);
+  for (let j = 0; j < nv; j++) for (let i = 0; i < nu; i++) c.fillRect((u0 + (i + 0.28) * du) * w, (v0 + (j + 0.25) * dv) * h, cw, ch);
+}
+function shadeAfter(c, w, h, pts, color) { c.save(); P(c, w, h, pts); c.clip(); c.fillStyle = color; c.fillRect(0, 0, w, h); c.restore(); }
+const SNOW = '#F4F7FA';
+
+function ballArt(fill, extra) { return {aspect: 1, shade: null, draw(c, w, h) {
+  E(c, w, h, 0.5, 0.5, 0.5, 0.5, fill, 'rgba(40,50,60,.35)');
+  if (extra) extra(c, w, h);
+  c.save(); c.beginPath(); c.ellipse(0.5 * w, 0.5 * h, 0.5 * w, 0.5 * h, 0, 0, Math.PI * 2); c.clip();
+  E(c, w, h, 0.72, 0.72, 0.5, 0.5, 'rgba(20,30,40,.12)'); c.restore();
+}}; }
+
+/* mountains: ridge is a list of [u, v] points from the left foot to the right foot; the peak must reach v = 0 */
+function mountainArt(m) { return {aspect: m.aspect, shade: null, draw(c, w, h) {
+  const pts = [[0, 1], ...m.ridge, [1, 1]];
+  fillP(c, w, h, pts, m.rock);
+  const pk = m.ridge.reduce((a, b) => (b[1] < a[1] ? b : a));
+  c.save(); P(c, w, h, pts); c.clip();
+  fillP(c, w, h, [[pk[0], 0], [1, 0], [1, 1], [pk[0] + 0.1, 1]], m.rock2 || 'rgba(20,25,35,.22)');
+  if (m.snow) {
+    c.beginPath(); c.moveTo(0, 0); c.lineTo(w, 0);
+    const n = 14;
+    for (let i = n; i >= 0; i--) c.lineTo((i / n) * w, (m.snow + (i % 2 ? 0.05 : -0.02)) * h);
+    c.closePath(); c.fillStyle = SNOW; c.fill();
+    fillP(c, w, h, [[pk[0], 0], [1, 0], [1, m.snow + 0.05], [pk[0] + 0.06, m.snow + 0.05]], 'rgba(90,120,160,.2)');
+  }
+  if (m.green) {
+    c.beginPath(); c.moveTo(0, h);
+    for (let i = 0; i <= 20; i++) c.lineTo((i / 20) * w, (m.greenV + (i % 2 ? 0.03 : -0.01)) * h);
+    c.lineTo(w, h); c.closePath(); c.fillStyle = m.green; c.fill();
+  }
+  if (m.extra) m.extra(c, w, h);
+  c.restore();
+}}; }
+
+/* waterfalls: a cliff with a band of falling water */
+function fallsArt(f) { return {aspect: f.aspect, shade: null, draw(c, w, h) {
+  const cliff = f.cliff || [[0, 1], [0, 0.02], [0.3, 0], [0.7, 0], [1, 0.03], [1, 1]];
+  fillP(c, w, h, cliff, f.rock);
+  c.save(); P(c, w, h, cliff); c.clip();
+  fillP(c, w, h, [[0.6, 0], [1, 0], [1, 1], [0.7, 1]], 'rgba(20,25,35,.18)');
+  if (f.green) { R(c, w, h, 0, f.greenV, 1, 1, f.green); }
+  for (const [u0, u1, v0, v1] of f.water) {
+    R(c, w, h, u0, v0, u1, v1, '#8FC9E3');
+    c.fillStyle = 'rgba(255,255,255,.7)';
+    const n = Math.max(2, Math.round((u1 - u0) * 40));
+    for (let i = 0; i < n; i++) { const u = u0 + (u1 - u0) * (i + 0.3) / n; c.fillRect(u * w, v0 * h, Math.max(0.5, (u1 - u0) / n * w * 0.25), (v1 - v0) * h); }
+    E(c, w, h, (u0 + u1) / 2, v1, (u1 - u0) / 2 + 0.05, 0.05, 'rgba(255,255,255,.85)');
+  }
+  R(c, w, h, 0, 0.94, 1, 1, '#5E9FC4');
+  c.restore();
+}}; }
+
+function dogArt(d) { return {aspect: d.aspect, shade: null, draw(c, w, h) {
+  const b = d.body, k = d.dark;
+  for (const u of [0.24, 0.32, 0.68, 0.76]) R(c, w, h, u, d.legTop, u + 0.07, 0.97, u === 0.32 || u === 0.76 ? k : b);
+  for (const u of [0.24, 0.32, 0.68, 0.76]) R(c, w, h, u - 0.01, 0.95, u + 0.08, 1, k);
+  c.beginPath(); c.roundRect(0.2 * w, d.back * h, 0.64 * w, (d.legTop - d.back + 0.06) * h, 0.08 * h); c.fillStyle = b; c.fill();
+  fillP(c, w, h, [[0.2, d.back + 0.04], [0.14, d.head + 0.12], [0.26, d.head + 0.1], [0.32, d.back + 0.04]], b);
+  E(c, w, h, 0.17, d.head + 0.12, 0.09, 0.1, b);
+  fillP(c, w, h, [[0.02, d.head + 0.12], [0.1, d.head + 0.08], [0.12, d.head + 0.2], [0.03, d.head + 0.2]], b);
+  E(c, w, h, 0.03, d.head + 0.14, 0.025, 0.025, '#2A2522');
+  E(c, w, h, 0.14, d.head + 0.1, 0.015, 0.015, '#2A2522');
+  if (d.ears === 'up') fillP(c, w, h, [[0.16, d.head + 0.06], [0.24, 0], [0.26, d.head + 0.1]], k);
+  else fillP(c, w, h, [[0.17, d.head + 0.02], [0.24, 0], [0.27, d.head + 0.16], [0.21, d.head + 0.18]], k);
+  L(c, w, h, [[0.83, d.back + 0.05], [0.93, d.back - 0.04], [0.98, d.back - 0.1]], b, Math.max(1, h * 0.04));
+}}; }
+
+Object.assign(ART, {
+  /* ---- small things ---- */
+  pingpong: ballArt('#F59A3C'),
+  golfball: ballArt('#FBFBF8', (c, w, h) => { c.fillStyle = 'rgba(120,130,140,.35)'; for (let i = 0; i < 26; i++) { const a = i * 2.4, r = 0.12 + (i % 5) * 0.075; c.beginPath(); c.arc((0.5 + Math.cos(a) * r) * w, (0.5 + Math.sin(a) * r) * h, 0.022 * w, 0, 7); c.fill(); } }),
+  tennisball: ballArt('#D6E04A', (c, w, h) => {
+    c.strokeStyle = '#FAFAF2'; c.lineWidth = Math.max(0.8, w * 0.05);
+    c.beginPath(); c.arc(-0.12 * w, 0.5 * h, 0.45 * w, -0.9, 0.9); c.stroke();
+    c.beginPath(); c.arc(1.12 * w, 0.5 * h, 0.45 * w, Math.PI - 0.9, Math.PI + 0.9); c.stroke();
+  }),
+  crayon: {aspect: 0.14, shade: 0.5, draw(c, w, h) {
+    fillP(c, w, h, [[0.12, 0.2], [0.3, 0.06], [0.42, 0], [0.58, 0], [0.7, 0.06], [0.88, 0.2]], '#D93A2B');
+    R(c, w, h, 0.1, 0.2, 0.9, 1, '#D93A2B');
+    R(c, w, h, 0.1, 0.3, 0.9, 0.9, '#B82D22');
+    for (const v of [0.34, 0.84]) R(c, w, h, 0.1, v, 0.9, v + 0.02, '#1E1E1E');
+  }},
+  mug: {aspect: 1.2, shade: null, draw(c, w, h) {
+    c.lineWidth = Math.max(1, w * 0.07); c.strokeStyle = '#2F6397';
+    c.beginPath(); c.ellipse(0.8 * w, 0.48 * h, 0.14 * w, 0.24 * h, 0, -1.4, 1.4); c.stroke();
+    fillP(c, w, h, [[0.02, 0], [0.78, 0], [0.76, 0.96], [0.72, 1], [0.08, 1], [0.04, 0.96]], '#3E7CB1');
+    R(c, w, h, 0.02, 0, 0.78, 0.05, '#2F6397');
+    fillP(c, w, h, [[0.45, 0.05], [0.78, 0.05], [0.76, 0.96], [0.72, 1], [0.5, 1]], 'rgba(20,30,40,.14)');
+  }},
+  sodacan: {aspect: 0.54, shade: 0.55, draw(c, w, h) {
+    fillP(c, w, h, [[0.14, 0], [0.86, 0], [1, 0.07], [1, 0.93], [0.88, 1], [0.12, 1], [0, 0.93], [0, 0.07]], '#C7CDD3');
+    R(c, w, h, 0, 0.09, 1, 0.9, '#C8352B');
+    c.beginPath(); c.moveTo(0, 0.55 * h); c.bezierCurveTo(0.3 * w, 0.35 * h, 0.6 * w, 0.75 * h, w, 0.5 * h); c.lineTo(w, 0.6 * h); c.bezierCurveTo(0.6 * w, 0.85 * h, 0.3 * w, 0.45 * h, 0, 0.65 * h); c.closePath(); c.fillStyle = '#F4F4F0'; c.fill();
+  }},
+  pencil: {aspect: 0.05, shade: 0.5, draw(c, w, h) {
+    R(c, w, h, 0, 0, 1, 0.05, '#E7909A');
+    R(c, w, h, 0, 0.05, 1, 0.1, '#B9BEC3');
+    R(c, w, h, 0, 0.1, 1, 1, '#F2C230');
+    R(c, w, h, 0.35, 0.1, 0.4, 1, '#D9A91E');
+  }},
+  paper: {aspect: 0.773, shade: null, draw(c, w, h) {
+    fillP(c, w, h, [[0, 0], [0.86, 0], [1, 0.11], [1, 1], [0, 1]], '#FBFBF8', 'rgba(40,50,60,.4)');
+    fillP(c, w, h, [[0.86, 0], [0.86, 0.11], [1, 0.11]], '#DADDE0');
+    c.fillStyle = 'rgba(80,120,170,.3)';
+    for (let v = 0.18; v < 0.95; v += 0.045) c.fillRect(0.1 * w, v * h, 0.8 * w, Math.max(0.5, h * 0.003));
+    R(c, w, h, 0.16, 0.04, 0.17, 0.98, 'rgba(210,80,80,.35)');
+  }},
+  winebottle: {aspect: 0.25, shade: 0.5, draw(c, w, h) {
+    fillP(c, w, h, [[0.36, 0], [0.64, 0], [0.64, 0.3], [1, 0.42], [1, 1], [0, 1], [0, 0.42], [0.36, 0.3]], '#274A2E');
+    R(c, w, h, 0.34, 0, 0.66, 0.11, '#7A1F2B');
+    R(c, w, h, 0.06, 0.55, 0.94, 0.82, '#F0E6CF');
+    R(c, w, h, 0.2, 0.62, 0.8, 0.64, '#8C7A5A');
+  }},
+  ruler: {aspect: 0.1, shade: null, draw(c, w, h) {
+    R(c, w, h, 0, 0, 1, 1, '#E7C27B');
+    c.fillStyle = '#5A4520';
+    for (let i = 0; i <= 48; i++) { const v = i / 48; c.fillRect(0, Math.min(v * h, h - 1), (i % 4 ? 0.3 : 0.6) * w, Math.max(0.5, h * 0.003)); }
+    c.strokeStyle = 'rgba(90,70,30,.5)'; c.lineWidth = 1; c.strokeRect(0.5, 0.5, w - 1, h - 1);
+  }},
+  bowlingpin: {aspect: 0.32, shade: 0.5, draw(c, w, h) {
+    c.beginPath();
+    c.moveTo(0.5 * w, 0);
+    c.bezierCurveTo(0.82 * w, 0, 0.84 * w, 0.2 * h, 0.66 * w, 0.3 * h);
+    c.bezierCurveTo(0.58 * w, 0.36 * h, 1.02 * w, 0.5 * h, 0.98 * w, 0.68 * h);
+    c.bezierCurveTo(0.95 * w, 0.85 * h, 0.8 * w, 0.95 * h, 0.72 * w, h);
+    c.lineTo(0.28 * w, h);
+    c.bezierCurveTo(0.2 * w, 0.95 * h, 0.05 * w, 0.85 * h, 0.02 * w, 0.68 * h);
+    c.bezierCurveTo(-0.02 * w, 0.5 * h, 0.42 * w, 0.36 * h, 0.34 * w, 0.3 * h);
+    c.bezierCurveTo(0.16 * w, 0.2 * h, 0.18 * w, 0, 0.5 * w, 0);
+    c.closePath(); c.fillStyle = '#F6F4EF'; c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke();
+    R(c, w, h, 0.2, 0.26, 0.8, 0.285, '#C8352B'); R(c, w, h, 0.2, 0.31, 0.8, 0.335, '#C8352B');
+  }},
+  suitcase: {aspect: 0.64, shade: 0.5, draw(c, w, h) {
+    R(c, w, h, 0.42, 0, 0.58, 0.02, '#2C3440');
+    R(c, w, h, 0.43, 0, 0.45, 0.1, '#2C3440'); R(c, w, h, 0.55, 0, 0.57, 0.1, '#2C3440');
+    c.beginPath(); c.roundRect(0.02 * w, 0.09 * h, 0.96 * w, 0.84 * h, 0.08 * w); c.fillStyle = '#2E5B8A'; c.fill();
+    for (const u of [0.25, 0.5, 0.75]) R(c, w, h, u - 0.012, 0.12, u + 0.012, 0.9, 'rgba(255,255,255,.18)');
+    for (const u of [0.14, 0.86]) E(c, w, h, u, 0.965, 0.07, 0.035, '#1E2329');
+  }},
+  cone: {aspect: 0.5, shade: 0.5, draw(c, w, h) {
+    R(c, w, h, 0, 0.93, 1, 1, '#2A2D31');
+    fillP(c, w, h, [[0.42, 0], [0.58, 0], [0.84, 0.93], [0.16, 0.93]], '#F07A1E');
+    fillP(c, w, h, [[0.34, 0.3], [0.66, 0.3], [0.7, 0.42], [0.3, 0.42]], '#F4F4F0');
+    fillP(c, w, h, [[0.26, 0.56], [0.74, 0.56], [0.77, 0.66], [0.23, 0.66]], '#F4F4F0');
+  }},
+  chihuahua: dogArt({aspect: 1.25, body: '#D8B07A', dark: '#B98A52', ears: 'up', back: 0.36, head: 0.02, legTop: 0.62}),
+  zeus: dogArt({aspect: 0.95, body: '#6F7A86', dark: '#56606B', ears: 'flop', back: 0.2, head: 0.0, legTop: 0.5}),
+  macaw: {aspect: 0.36, shade: null, draw(c, w, h) {
+    fillP(c, w, h, [[0.36, 0.55], [0.64, 0.55], [0.56, 1], [0.44, 1]], '#C8302A');
+    fillP(c, w, h, [[0.44, 0.6], [0.56, 0.6], [0.52, 1], [0.48, 1]], '#2F6DB5');
+    E(c, w, h, 0.5, 0.36, 0.34, 0.2, '#D7322B');
+    E(c, w, h, 0.5, 0.11, 0.3, 0.11, '#D7322B');
+    E(c, w, h, 0.36, 0.11, 0.12, 0.05, '#F5EFE6');
+    E(c, w, h, 0.36, 0.1, 0.04, 0.015, '#222');
+    fillP(c, w, h, [[0.08, 0.1], [0.2, 0.06], [0.22, 0.2], [0.12, 0.2]], '#E9DFC9');
+    fillP(c, w, h, [[0.58, 0.28], [0.9, 0.3], [0.8, 0.56], [0.62, 0.5]], '#F2C230');
+    fillP(c, w, h, [[0.62, 0.42], [0.86, 0.44], [0.74, 0.66], [0.6, 0.6]], '#2F6DB5');
+    R(c, w, h, 0.1, 0.52, 0.9, 0.55, '#7A5A3A');
+  }},
+  ostrich: {aspect: 0.72, shade: null, draw(c, w, h) {
+    for (const [u, k] of [[0.46, '#C49A8C'], [0.56, '#B08678']]) L(c, w, h, [[u, 0.55], [u - 0.02, 0.78], [u + 0.02, 0.98]], k, Math.max(1, w * 0.04));
+    R(c, w, h, 0.4, 0.97, 0.52, 1, '#9C7466'); R(c, w, h, 0.52, 0.97, 0.64, 1, '#9C7466');
+    E(c, w, h, 0.56, 0.45, 0.3, 0.14, '#2A2A2C');
+    fillP(c, w, h, [[0.8, 0.36], [1, 0.3], [0.98, 0.5], [0.84, 0.5]], '#F2F0EA');
+    L(c, w, h, [[0.32, 0.4], [0.24, 0.2], [0.2, 0.05]], '#D5A99D', Math.max(1, w * 0.05));
+    E(c, w, h, 0.19, 0.04, 0.06, 0.04, '#D5A99D');
+    fillP(c, w, h, [[0.06, 0.04], [0.14, 0.03], [0.14, 0.06]], '#6E5A50');
+    E(c, w, h, 0.18, 0.03, 0.012, 0.012, '#1E1E1E');
+  }},
+  hockeygoal: {aspect: 1.5, shade: null, draw(c, w, h) {
+    c.strokeStyle = 'rgba(120,130,140,.55)'; c.lineWidth = Math.max(0.5, w * 0.004);
+    for (let i = 1; i < 14; i++) { c.beginPath(); c.moveTo((i / 14) * w, 0); c.lineTo((i / 14) * w + 0.08 * w, h); c.stroke(); }
+    for (let j = 1; j < 9; j++) { c.beginPath(); c.moveTo(0, (j / 9) * h); c.lineTo(w, (j / 9) * h); c.stroke(); }
+    R(c, w, h, 0, 0, 0.04, 1, '#D7322B'); R(c, w, h, 0.96, 0, 1, 1, '#D7322B'); R(c, w, h, 0, 0, 1, 0.06, '#D7322B');
+  }},
+  highjump: {aspect: 1.7, shade: null, draw(c, w, h) {
+    R(c, w, h, 0.12, 0.78, 0.88, 1, '#2F5FA8'); R(c, w, h, 0.12, 0.78, 0.88, 0.82, '#3F74C4');
+    R(c, w, h, 0.02, 0, 0.035, 1, '#C9CED4'); R(c, w, h, 0.965, 0, 0.98, 1, '#C9CED4');
+    R(c, w, h, 0, 0.97, 0.06, 1, '#8A9199'); R(c, w, h, 0.94, 0.97, 1, 1, '#8A9199');
+    for (let i = 0; i < 10; i++) R(c, w, h, 0.03 + i * 0.094, 0.005, 0.03 + (i + 1) * 0.094, 0.025, i % 2 ? '#F4F4F0' : '#E0452B');
+  }},
+  container: {aspect: 2.35, shade: null, draw(c, w, h) {
+    R(c, w, h, 0, 0, 1, 1, '#C4552B');
+    c.fillStyle = 'rgba(0,0,0,.14)';
+    for (let u = 0.03; u < 0.97; u += 0.03) c.fillRect(u * w, 0.06 * h, Math.max(0.5, w * 0.012), 0.88 * h);
+    R(c, w, h, 0, 0, 1, 0.05, '#9F4221'); R(c, w, h, 0, 0.95, 1, 1, '#9F4221');
+    R(c, w, h, 0, 0, 0.025, 1, '#9F4221'); R(c, w, h, 0.975, 0, 1, 1, '#9F4221');
+  }},
+  cessna: {aspect: 3.0, shade: null, draw(c, w, h) {
+    fillP(c, w, h, [[0.86, 0.46], [0.9, 0.0], [0.96, 0.0], [0.99, 0.46]], '#F2F3F5', EDGE);
+    fillP(c, w, h, [[0.06, 0.44], [0.3, 0.3], [0.52, 0.32], [0.99, 0.44], [0.99, 0.52], [0.52, 0.7], [0.1, 0.72], [0.04, 0.62]], '#F2F3F5', EDGE);
+    R(c, w, h, 0.05, 0.54, 0.98, 0.58, '#2E5C9A');
+    fillP(c, w, h, [[0.28, 0.34], [0.36, 0.32], [0.38, 0.46], [0.3, 0.48]], '#58687A');
+    R(c, w, h, 0.26, 0.24, 0.6, 0.3, '#E4E7EA');
+    L(c, w, h, [[0.36, 0.64], [0.5, 0.3]], '#8A9199', Math.max(0.7, h * 0.02));
+    R(c, w, h, 0.0, 0.3, 0.03, 0.82, '#3A3F45');
+    L(c, w, h, [[0.12, 0.72], [0.12, 0.88]], '#6B737C', Math.max(0.7, h * 0.02));
+    L(c, w, h, [[0.4, 0.68], [0.46, 0.88]], '#6B737C', Math.max(0.7, h * 0.02));
+    E(c, w, h, 0.12, 0.93, 0.025, 0.07, '#23272B'); E(c, w, h, 0.46, 0.93, 0.025, 0.07, '#23272B');
+  }},
+  b747: {aspect: 3.9, shade: null, draw(c, w, h) {
+    fillP(c, w, h, [[0.8, 0.5], [0.9, 0.0], [0.97, 0.0], [0.97, 0.5]], '#E7EAEE', EDGE);
+    c.beginPath();
+    c.moveTo(0.05 * w, 0.8 * h);
+    c.bezierCurveTo(0.0, 0.78 * h, 0.0, 0.5 * h, 0.08 * w, 0.4 * h);
+    c.bezierCurveTo(0.15 * w, 0.3 * h, 0.28 * w, 0.32 * h, 0.34 * w, 0.46 * h);
+    c.lineTo(0.8 * w, 0.46 * h); c.lineTo(0.985 * w, 0.5 * h); c.lineTo(0.985 * w, 0.56 * h); c.lineTo(0.8 * w, 0.8 * h); c.closePath();
+    c.fillStyle = '#F4F5F7'; c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke();
+    c.fillStyle = '#58687A';
+    for (let u = 0.08; u < 0.78; u += 0.018) c.fillRect(u * w, 0.56 * h, Math.max(0.5, w * 0.005), Math.max(0.5, h * 0.035));
+    for (let u = 0.1; u < 0.3; u += 0.018) c.fillRect(u * w, 0.42 * h, Math.max(0.5, w * 0.005), Math.max(0.5, h * 0.03));
+    R(c, w, h, 0.05, 0.66, 0.8, 0.69, '#2E5C9A');
+    fillP(c, w, h, [[0.3, 0.68], [0.6, 0.66], [0.64, 0.7], [0.3, 0.73]], '#AEB6BE');
+    for (const u of [0.36, 0.48]) E(c, w, h, u, 0.82, 0.04, 0.06, '#C3CAD1', EDGE);
+    for (const [u, n] of [[0.12, 1], [0.52, 3]]) {
+      R(c, w, h, u + 0.005, 0.8, u + 0.01, 0.94, '#6B737C');
+      for (let k = 0; k < n; k++) { c.beginPath(); c.arc((u + k * 0.02) * w, 0.95 * h, 0.05 * h, 0, 7); c.fillStyle = '#2A3038'; c.fill(); }
+    }
+  }},
+  routemaster: {aspect: 1.9, shade: null, draw(c, w, h) {
+    c.beginPath(); c.roundRect(0.02 * w, 0, 0.96 * w, 0.86 * h, [0.12 * h, 0.12 * h, 0.02 * h, 0.02 * h]); c.fillStyle = '#C8231E'; c.fill();
+    R(c, w, h, 0.02, 0.44, 0.98, 0.49, '#F2EDE0');
+    grid(c, w, h, 0.06, 0.12, 0.94, 0.34, 5, 1, '#3F4E5E');
+    grid(c, w, h, 0.2, 0.56, 0.94, 0.74, 4, 1, '#3F4E5E');
+    R(c, w, h, 0.03, 0.52, 0.12, 0.86, '#3F4E5E');
+    R(c, w, h, 0.02, 0.86, 0.98, 0.9, '#2A2D31');
+    for (const u of [0.24, 0.8]) { E(c, w, h, u, 0.9, 0.07, 0.1, '#1E2126'); E(c, w, h, u, 0.9, 0.03, 0.045, '#9AA1A8'); }
+  }},
+  diving: {aspect: 0.62, shade: 0.4, draw(c, w, h) {
+    R(c, w, h, 0.05, 0.03, 0.3, 1, '#D8DADC');
+    for (const [v, u1] of [[0, 1], [0.25, 0.85], [0.5, 0.75], [0.7, 0.62]]) { R(c, w, h, 0.05, v, u1, v + 0.03, '#E9ECEF'); R(c, w, h, 0.05, v + 0.025, u1, v + 0.035, '#2F6DB5'); }
+    for (const v of [0.12, 0.38, 0.6]) L(c, w, h, [[0.0, v + 0.12], [0.05, v]], '#9AA1A8', Math.max(0.6, w * 0.01));
+    L(c, w, h, [[0.02, 1], [0.02, 0.0]], '#9AA1A8', Math.max(0.6, w * 0.012));
+  }},
+  greenmonster: {aspect: 4, shade: null, draw(c, w, h) {
+    R(c, w, h, 0, 0, 1, 1, '#2F5D3A');
+    R(c, w, h, 0, 0, 1, 0.04, '#244A2E');
+    R(c, w, h, 0.3, 0.18, 0.7, 0.7, '#244A2E');
+    grid(c, w, h, 0.32, 0.22, 0.68, 0.66, 9, 3, '#E9ECE6');
+    L(c, w, h, [[0.9, 1], [0.9, 0.1]], '#3E6E4A', Math.max(0.6, w * 0.004));
+    for (let v = 0.15; v < 1; v += 0.08) L(c, w, h, [[0.895, v], [0.915, v]], '#3E6E4A', Math.max(0.5, w * 0.002));
+  }},
+  goalpost: {aspect: 0.42, shade: null, draw(c, w, h) {
+    const y = '#F2C12E', lw = Math.max(1, w * 0.035);
+    L(c, w, h, [[0.5, 1], [0.5, 0.86], [0.5, 0.78]], y, lw * 1.4);
+    R(c, w, h, 0, 0.765, 1, 0.79, y);
+    R(c, w, h, 0, 0, 0.03, 0.79, y); R(c, w, h, 0.97, 0, 1, 0.79, y);
+    R(c, w, h, 0.03, 0, 0.09, 0.03, '#E0452B'); R(c, w, h, 0.91, 0, 0.97, 0.03, '#E0452B');
+    R(c, w, h, 0.44, 0.97, 0.56, 1, '#8A9199');
+  }},
+  falcon9: {aspect: 0.08, shade: 0.5, draw(c, w, h) {
+    fillP(c, w, h, [[0.5, 0], [0.9, 0.05], [1, 0.1], [1, 0.19], [0, 0.19], [0, 0.1], [0.1, 0.05]], '#F4F4F2', EDGE);
+    R(c, w, h, 0.1, 0.19, 0.9, 1, '#F2F2EF');
+    R(c, w, h, 0.1, 0.36, 0.9, 0.41, '#23272B');
+    R(c, w, h, 0, 0.41, 0.1, 0.43, '#3A3F45'); R(c, w, h, 0.9, 0.41, 1, 0.43, '#3A3F45');
+    for (const u of [0.1, 0.84]) R(c, w, h, u, 0.82, u + 0.06, 0.97, '#23272B');
+    R(c, w, h, 0.2, 0.97, 0.8, 1, '#555B60');
+    c.strokeStyle = EDGE; c.lineWidth = 1; c.strokeRect(0.1 * w, 0.19 * h, 0.8 * w, 0.78 * h);
+  }},
+  sls: {aspect: 0.17, shade: 0.5, draw(c, w, h) {
+    for (const u of [0, 0.78]) {
+      R(c, w, h, u, 0.3, u + 0.22, 0.96, '#F2F2EF');
+      fillP(c, w, h, [[u, 0.3], [u + 0.11, 0.24], [u + 0.22, 0.3]], '#F2F2EF');
+      fillP(c, w, h, [[u + 0.03, 0.96], [u + 0.19, 0.96], [u + 0.22, 1], [u, 1]], '#555B60');
+      c.strokeStyle = EDGE; c.lineWidth = 1; c.strokeRect(u * w, 0.3 * h, 0.22 * w, 0.66 * h);
+    }
+    R(c, w, h, 0.24, 0.35, 0.76, 0.97, '#D0782F');
+    R(c, w, h, 0.3, 0.97, 0.7, 1, '#555B60');
+    fillP(c, w, h, [[0.24, 0.35], [0.36, 0.27], [0.64, 0.27], [0.76, 0.35]], '#E9E9E6');
+    R(c, w, h, 0.36, 0.17, 0.64, 0.27, '#F2F2EF');
+    fillP(c, w, h, [[0.36, 0.17], [0.44, 0.1], [0.56, 0.1], [0.64, 0.17]], '#C9CDD1');
+    fillP(c, w, h, [[0.47, 0.1], [0.49, 0], [0.51, 0], [0.53, 0.1]], '#C4442F');
+  }},
+});
+
+Object.assign(ART, {
+  /* ---- landmarks and buildings ---- */
+  brandenburg: {aspect: 2.4, shade: null, draw(c, w, h) {
+    const s = '#D6C193', d = '#B7A073';
+    R(c, w, h, 0, 0.3, 1, 0.42, s); R(c, w, h, 0, 0.27, 1, 0.3, d);
+    for (let i = 0; i < 6; i++) R(c, w, h, 0.03 + i * 0.184, 0.42, 0.03 + i * 0.184 + 0.05, 0.96, s);
+    R(c, w, h, 0, 0.96, 1, 1, d);
+    fillP(c, w, h, [[0.3, 0.27], [0.34, 0.2], [0.66, 0.2], [0.7, 0.27]], s);
+    R(c, w, h, 0.42, 0.12, 0.58, 0.2, '#4E7A6C');
+    fillP(c, w, h, [[0.43, 0.12], [0.45, 0.04], [0.48, 0.06], [0.5, 0.0], [0.52, 0.06], [0.55, 0.04], [0.57, 0.12]], '#4E7A6C');
+  }},
+  whitetower: {aspect: 1.33, shade: 0.55, draw(c, w, h) {
+    const s = '#ECE8DD';
+    R(c, w, h, 0.05, 0.08, 0.95, 1, s);
+    for (const u of [0, 0.86]) R(c, w, h, u, 0.0, u + 0.14, 1, s);
+    for (let u = 0.16; u < 0.84; u += 0.06) R(c, w, h, u, 0.04, u + 0.035, 0.08, s);
+    for (const u of [0.02, 0.06, 0.1, 0.88, 0.92, 0.96]) R(c, w, h, u - 0.006, 0, u + 0.012, 0.02, 'rgba(0,0,0,.18)');
+    grid(c, w, h, 0.18, 0.22, 0.82, 0.8, 4, 3, '#5C5A55');
+    c.strokeStyle = EDGE; c.lineWidth = 1; c.strokeRect(0.5, 0.5, w - 1, h - 1);
+  }},
+  elcastillo: {aspect: 1.84, shade: 0.52, draw(c, w, h) {
+    const s = '#D5C8AA';
+    for (let i = 0; i < 9; i++) { const v = 0.2 + i * 0.089, inset = 0.24 - i * 0.027; R(c, w, h, inset, v, 1 - inset, v + 0.09, i % 2 ? s : '#CBBD9D'); }
+    R(c, w, h, 0.45, 0.2, 0.55, 1, '#B8A984');
+    for (let v = 0.22; v < 1; v += 0.03) R(c, w, h, 0.45, v, 0.55, v + 0.008, 'rgba(0,0,0,.12)');
+    R(c, w, h, 0.39, 0.02, 0.61, 0.2, s); R(c, w, h, 0.38, 0, 0.62, 0.03, '#BFB091');
+    R(c, w, h, 0.47, 0.09, 0.53, 0.2, '#5A5040');
+  }},
+  arctriomphe: {aspect: 0.905, shade: 0.55, draw(c, w, h) {
+    const s = '#E4D8C0';
+    R(c, w, h, 0, 0, 1, 1, s);
+    R(c, w, h, 0, 0.1, 1, 0.13, '#CFC2A6'); R(c, w, h, 0, 0.2, 1, 0.23, '#CFC2A6');
+    c.beginPath(); c.moveTo(0.335 * w, h); c.lineTo(0.335 * w, 0.55 * h); c.arc(0.5 * w, 0.55 * h, 0.165 * w, Math.PI, 0); c.lineTo(0.665 * w, h); c.closePath();
+    c.fillStyle = '#6B6352'; c.fill();
+    R(c, w, h, 0.06, 0.45, 0.24, 0.62, '#D6CAB0'); R(c, w, h, 0.76, 0.45, 0.94, 0.62, '#D6CAB0');
+  }},
+  horseshoe: fallsArt({aspect: 2.6, rock: '#6D6558', water: [[0.12, 0.88, 0.03, 0.94]], cliff: [[0, 1], [0, 0.0], [1, 0.0], [1, 1]], green: '#4F7A45', greenV: 0.9}),
+  victoriafalls: fallsArt({aspect: 3, rock: '#6B5A48', water: [[0.04, 0.2, 0.02, 0.94], [0.24, 0.5, 0.02, 0.94], [0.56, 0.7, 0.02, 0.94], [0.76, 0.96, 0.02, 0.94]], cliff: [[0, 1], [0, 0.02], [0.5, 0], [1, 0.02], [1, 1]]}),
+  yosemitefalls: fallsArt({aspect: 0.8, rock: '#BDB6A8', water: [[0.46, 0.53, 0.01, 0.43], [0.5, 0.58, 0.45, 0.66], [0.53, 0.6, 0.68, 0.94]], cliff: [[0, 1], [0.05, 0.1], [0.2, 0.02], [0.45, 0], [0.7, 0.03], [0.95, 0.15], [1, 1]], green: '#3F6B3E', greenV: 0.86}),
+  angelfalls: fallsArt({aspect: 0.72, rock: '#86654F', water: [[0.4, 0.46, 0.01, 0.8]], cliff: [[0, 1], [0.02, 0.05], [0.15, 0], [0.8, 0], [0.98, 0.08], [1, 1]], green: '#2F6B34', greenV: 0.72}),
+  hatteras: {aspect: 0.2, shade: 0.5, draw(c, w, h) {
+    const body = [[0.14, 0.95], [0.26, 0.1], [0.74, 0.1], [0.86, 0.95]];
+    fillP(c, w, h, body, '#F5F3EE');
+    c.save(); P(c, w, h, body); c.clip();
+    c.fillStyle = '#1E1F22';
+    for (let i = -2; i < 6; i++) { c.beginPath(); const v = 0.12 + i * 0.17; c.moveTo(0, (v + 0.05) * h); c.lineTo(w, v * h); c.lineTo(w, (v + 0.085) * h); c.lineTo(0, (v + 0.135) * h); c.closePath(); c.fill(); }
+    c.restore();
+    R(c, w, h, 0.1, 0.9, 0.9, 1, '#B5553B');
+    R(c, w, h, 0.18, 0.08, 0.82, 0.11, '#1E1F22');
+    R(c, w, h, 0.32, 0.03, 0.68, 0.08, '#C9D6DF');
+    fillP(c, w, h, [[0.3, 0.035], [0.5, 0], [0.7, 0.035]], '#1E1F22');
+  }},
+  towerbridge: {aspect: 3.2, shade: null, draw(c, w, h) {
+    const s = '#CFC4AC', b = '#5E93C0';
+    R(c, w, h, 0, 0.72, 1, 0.78, b);
+    for (const s0 of [-1, 1]) {
+      const tx = s0 < 0 ? 0.3 : 0.7;
+      L(c, w, h, [[tx, 0.2], [tx + s0 * 0.12, 0.55], [tx + s0 * 0.3, 0.72]], b, Math.max(1, h * 0.02));
+    }
+    R(c, w, h, 0.32, 0.18, 0.68, 0.25, b);
+    for (const u of [0.25, 0.63]) {
+      R(c, w, h, u, 0.12, u + 0.12, 1, s);
+      fillP(c, w, h, [[u, 0.12], [u + 0.06, 0.03], [u + 0.12, 0.12]], '#6C7A86');
+      for (const k of [0, 0.1]) fillP(c, w, h, [[u + k, 0.12], [u + k + 0.01, 0], [u + k + 0.02, 0.12]], '#6C7A86');
+      R(c, w, h, u + 0.04, 0.3, u + 0.08, 0.5, '#6B6352');
+      R(c, w, h, u + 0.03, 0.8, u + 0.09, 1, '#6B6352');
+    }
+  }},
+  flatiron: {aspect: 0.42, shade: null, draw(c, w, h) {
+    fillP(c, w, h, [[0, 0.05], [0.3, 0.02], [0.3, 1], [0, 1]], '#D8C6A4');
+    fillP(c, w, h, [[0.3, 0.02], [1, 0], [1, 1], [0.3, 1]], '#BFAB88');
+    R(c, w, h, 0, 0.02, 1, 0.05, '#A89573');
+    grid(c, w, h, 0.03, 0.08, 0.28, 0.92, 3, 20, '#6F6552');
+    grid(c, w, h, 0.34, 0.08, 0.98, 0.92, 7, 20, '#5F5646');
+  }},
+  atomium: {aspect: 0.86, shade: null, draw(c, w, h) {
+    const P9 = [[0.5, 0.09], [0.12, 0.3], [0.88, 0.3], [0.5, 0.36], [0.5, 0.51], [0.12, 0.66], [0.88, 0.66], [0.5, 0.6], [0.5, 0.86]];
+    const links = [[0, 1], [0, 2], [0, 3], [1, 4], [2, 4], [3, 4], [4, 5], [4, 6], [4, 7], [5, 8], [6, 8], [7, 8], [1, 5], [2, 6], [0, 4], [4, 8]];
+    for (const [a, b] of links) L(c, w, h, [P9[a], P9[b]], '#AEB6BE', Math.max(1, w * 0.035));
+    L(c, w, h, [[0.5, 0.86], [0.5, 1]], '#AEB6BE', Math.max(1, w * 0.05));
+    L(c, w, h, [[0.12, 0.66], [0.08, 1]], '#AEB6BE', Math.max(1, w * 0.03));
+    L(c, w, h, [[0.88, 0.66], [0.92, 1]], '#AEB6BE', Math.max(1, w * 0.03));
+    for (const [u, v] of P9) { E(c, w, h, u, v, 0.105, 0.09, '#D9DEE3', EDGE); E(c, w, h, u - 0.03, v - 0.03, 0.035, 0.03, 'rgba(255,255,255,.8)'); }
+  }},
+  harbourbridge: {aspect: 3.4, shade: null, draw(c, w, h) {
+    const g = '#7B858E';
+    c.lineWidth = Math.max(1, h * 0.035); c.strokeStyle = g;
+    c.beginPath(); c.moveTo(0.14 * w, 0.8 * h); c.quadraticCurveTo(0.5 * w, -0.76 * h, 0.86 * w, 0.8 * h); c.stroke();
+    c.lineWidth = Math.max(1, h * 0.015);
+    c.beginPath(); c.moveTo(0.14 * w, 0.8 * h); c.quadraticCurveTo(0.5 * w, -0.25 * h, 0.86 * w, 0.8 * h); c.stroke();
+    for (let u = 0.2; u < 0.82; u += 0.04) L(c, w, h, [[u, 0.62], [u, 0.3 + Math.pow((u - 0.5) / 0.36, 2) * 0.4]], g, Math.max(0.5, h * 0.006));
+    R(c, w, h, 0, 0.6, 1, 0.65, '#5F6870');
+    for (const u of [0.04, 0.86]) R(c, w, h, u, 0.34, u + 0.1, 1, '#CDBB9C');
+  }},
+  blackpool: {aspect: 0.3, shade: 0.5, draw(c, w, h) {
+    fillP(c, w, h, symP([[0.5, 0], [0.49, 0.1], [0.44, 0.12], [0.44, 0.16], [0.42, 0.18], [0.36, 0.45], [0.26, 0.7], [0.2, 0.85], [0.5, 0.85]]), '#A33D2B');
+    R(c, w, h, 0.4, 0.12, 0.6, 0.16, '#7F2D1F');
+    c.strokeStyle = 'rgba(255,220,200,.3)'; c.lineWidth = Math.max(0.5, w * 0.01);
+    for (let v = 0.2; v < 0.84; v += 0.08) { const a = 0.42 - (v - 0.18) * 0.33, b = 1 - a; c.beginPath(); c.moveTo(a * w, v * h); c.lineTo(b * w, (v + 0.08) * h); c.moveTo(b * w, v * h); c.lineTo(a * w, (v + 0.08) * h); c.stroke(); }
+    R(c, w, h, 0, 0.85, 1, 1, '#B57E55');
+    grid(c, w, h, 0.03, 0.88, 0.97, 0.98, 8, 2, '#6B4A33');
+  }},
+  flagpole: {aspect: 0.45, shade: null, draw(c, w, h) {
+    R(c, w, h, 0.07, 0, 0.1, 1, '#B9BEC3');
+    R(c, w, h, 0.04, 0.97, 0.13, 1, '#8A9199');
+    c.beginPath(); c.moveTo(0.1 * w, 0.01 * h);
+    c.bezierCurveTo(0.4 * w, -0.01 * h, 0.7 * w, 0.05 * h, w, 0.02 * h);
+    c.lineTo(w, 0.2 * h);
+    c.bezierCurveTo(0.7 * w, 0.23 * h, 0.4 * w, 0.17 * h, 0.1 * w, 0.19 * h);
+    c.closePath(); c.fillStyle = '#2E7D4F'; c.fill();
+  }},
+  gherkin: {aspect: 0.33, shade: 0.55, draw(c, w, h) {
+    const path = () => { c.beginPath(); c.moveTo(0.1 * w, h); c.bezierCurveTo(-0.08 * w, 0.55 * h, 0.1 * w, 0.02 * h, 0.5 * w, 0); c.bezierCurveTo(0.9 * w, 0.02 * h, 1.08 * w, 0.55 * h, 0.9 * w, h); c.closePath(); };
+    path(); c.fillStyle = '#5B8A8E'; c.fill();
+    c.save(); path(); c.clip();
+    c.strokeStyle = '#2F5559'; c.lineWidth = Math.max(0.8, w * 0.035);
+    for (let i = -6; i < 12; i++) { c.beginPath(); c.moveTo((i * 0.16) * w, h); c.lineTo((i * 0.16 + 0.8) * w, 0); c.stroke(); }
+    c.fillStyle = 'rgba(255,255,255,.12)';
+    for (let v = 0.04; v < 1; v += 0.035) c.fillRect(0, v * h, w, Math.max(0.5, h * 0.004));
+    c.restore();
+    E(c, w, h, 0.5, 0.03, 0.12, 0.03, '#2A3A3E');
+  }},
+  threegorges: {aspect: 5, shade: null, draw(c, w, h) {
+    fillP(c, w, h, [[0, 0], [1, 0], [1, 1], [0, 1]], '#CAC6BD');
+    fillP(c, w, h, [[0, 0.05], [1, 0.05], [1, 0.12], [0, 0.12]], '#B3AFA6');
+    for (let i = 0; i < 18; i++) { const u = 0.3 + i * 0.022; R(c, w, h, u, 0.12, u + 0.012, 0.75, '#8E949A'); }
+    R(c, w, h, 0.3, 0.75, 0.7, 1, '#9FC6DB');
+    for (const u of [0.08, 0.84]) grid(c, w, h, u, 0.5, u + 0.08, 0.8, 4, 2, '#6F757C');
+    R(c, w, h, 0, 0, 1, 0.025, '#9EA3A8');
+  }},
+  hoover: {aspect: 1.7, shade: null, draw(c, w, h) {
+    fillP(c, w, h, [[0, 0], [0.22, 0.02], [0.3, 1], [0, 1]], '#9A6B4B');
+    fillP(c, w, h, [[1, 0], [0.78, 0.02], [0.7, 1], [1, 1]], '#86593C');
+    c.beginPath(); c.moveTo(0.2 * w, 0.02 * h); c.quadraticCurveTo(0.5 * w, 0.1 * h, 0.8 * w, 0.02 * h);
+    c.lineTo(0.62 * w, h); c.quadraticCurveTo(0.5 * w, 1.02 * h, 0.38 * w, h); c.closePath();
+    c.fillStyle = '#DCD6C8'; c.fill();
+    R(c, w, h, 0.2, 0.0, 0.8, 0.03, '#BDB6A6');
+    for (const u of [0.3, 0.66]) R(c, w, h, u, 0.0, u + 0.04, 0.03, '#EFEBE2');
+    R(c, w, h, 0.38, 0.93, 0.62, 1, '#7FB4CF');
+  }},
+  transamerica: {aspect: 0.24, shade: 0.5, draw(c, w, h) {
+    fillP(c, w, h, [[0.12, 1], [0.5, 0], [0.88, 1]], '#EFEDE6', EDGE);
+    fillP(c, w, h, [[0.04, 0.34], [0.34, 0.32], [0.3, 0.42], [0.06, 0.44]], '#E3E0D8');
+    fillP(c, w, h, [[0.96, 0.34], [0.66, 0.32], [0.7, 0.42], [0.94, 0.44]], '#E3E0D8');
+    c.save(); P(c, w, h, [[0.12, 1], [0.5, 0], [0.88, 1]]); c.clip();
+    c.fillStyle = 'rgba(80,90,100,.35)';
+    for (let v = 0.3; v < 0.96; v += 0.018) c.fillRect(0, v * h, w, Math.max(0.5, h * 0.004));
+    c.restore();
+    R(c, w, h, 0.08, 0.96, 0.92, 1, '#8A9199');
+  }},
+  devilstower: mountainArt({aspect: 1.35, rock: '#94806A', rock2: 'rgba(40,30,20,.25)', ridge: [[0.06, 1], [0.16, 0.8], [0.24, 0.6], [0.27, 0.05], [0.31, 0], [0.69, 0], [0.73, 0.05], [0.76, 0.6], [0.84, 0.8], [0.94, 1]], green: '#4E6E3F', greenV: 0.92,
+    extra(c, w, h) { c.fillStyle = 'rgba(60,45,30,.35)'; for (let u = 0.29; u < 0.72; u += 0.03) c.fillRect(u * w, 0.02 * h, Math.max(0.5, w * 0.006), 0.6 * h); R(c, w, h, 0, 0.62, 1, 0.9, 'rgba(210,190,160,.25)'); }}),
+  shard: {aspect: 0.26, shade: 0.5, draw(c, w, h) {
+    const pts = [[0, 1], [0.43, 0.03], [0.46, 0.07], [0.49, 0], [0.52, 0.05], [0.56, 0.02], [0.58, 0.08], [1, 1]];
+    fillP(c, w, h, pts, '#AFC6D8');
+    fillP(c, w, h, [[0.5, 0.06], [0.58, 0.08], [1, 1], [0.62, 1]], '#8AA6BD');
+    c.save(); P(c, w, h, pts); c.clip(); c.fillStyle = 'rgba(60,90,120,.2)';
+    for (let v = 0.12; v < 1; v += 0.02) c.fillRect(0, v * h, w, Math.max(0.5, h * 0.003));
+    c.restore();
+  }},
+  chrysler: {aspect: 0.28, shade: 0.5, draw(c, w, h) {
+    const b = '#D9D3C8', st = '#D2D8DE';
+    R(c, w, h, 0, 0.8, 1, 1, b);
+    R(c, w, h, 0.12, 0.34, 0.88, 0.8, b);
+    grid(c, w, h, 0.16, 0.36, 0.84, 0.78, 6, 30, '#5E6064');
+    for (let i = 0; i < 5; i++) {
+      const v0 = 0.34 - i * 0.045, half = 0.36 - i * 0.06;
+      c.beginPath(); c.moveTo((0.5 - half) * w, (v0 + 0.01) * h);
+      c.arc(0.5 * w, (v0 + 0.01) * h, half * w, Math.PI, 0); c.closePath();
+      c.fillStyle = i % 2 ? '#C3CAD1' : st; c.fill();
+      for (let k = -2; k <= 2; k++) fillP(c, w, h, [[0.5 + k * half * 0.4 - 0.02, v0], [0.5 + k * half * 0.4, v0 - 0.02], [0.5 + k * half * 0.4 + 0.02, v0]], '#3E454C');
+    }
+    fillP(c, w, h, [[0.46, 0.13], [0.5, 0], [0.54, 0.13]], st);
+  }},
+  burjalarab: {aspect: 0.5, shade: null, draw(c, w, h) {
+    R(c, w, h, 0.66, 0, 0.74, 1, '#C3C9CF');
+    c.beginPath(); c.moveTo(0.68 * w, 0.06 * h);
+    c.bezierCurveTo(0.2 * w, 0.2 * h, -0.02 * w, 0.6 * h, 0.12 * w, h);
+    c.lineTo(0.68 * w, h); c.closePath(); c.fillStyle = '#F3F4F6'; c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke();
+    c.strokeStyle = 'rgba(120,130,140,.45)';
+    for (let i = 1; i < 6; i++) { c.beginPath(); c.moveTo(0.68 * w, (0.06 + i * 0.15) * h); c.lineTo((0.12 + i * 0.02) * w + (0.3 - Math.abs(i - 3) * 0.05) * w * 0.3, (0.3 + i * 0.12) * h); c.stroke(); }
+    E(c, w, h, 0.8, 0.22, 0.14, 0.018, '#B9BEC3', EDGE);
+    fillP(c, w, h, [[0.74, 0.3], [1, 0.3], [0.9, 0.95], [0.74, 0.95]], '#A9B4BE');
+  }},
+  willis: {aspect: 0.3, shade: null, draw(c, w, h) {
+    const k = '#2B2F35';
+    const cols = [[0, 0.34, 0.45], [0.34, 0.66, 0], [0.66, 1, 0.18], [0.17, 0.34, 0.22], [0.66, 0.83, 0.1]];
+    for (const [u0, u1, v0] of cols) R(c, w, h, u0, v0, u1, 1, k);
+    c.fillStyle = 'rgba(160,175,190,.25)';
+    for (let v = 0.02; v < 1; v += 0.012) c.fillRect(0, v * h, w, Math.max(0.5, h * 0.003));
+    for (const u of [0.34, 0.66]) R(c, w, h, u - 0.004, 0, u + 0.004, 1, 'rgba(255,255,255,.08)');
+  }},
+  petronas: {aspect: 0.5, shade: null, draw(c, w, h) {
+    const s = '#C9CFD5';
+    for (const u of [0, 0.62]) {
+      R(c, w, h, u, 0.3, u + 0.38, 1, s);
+      for (let i = 0; i < 5; i++) R(c, w, h, u + 0.03 + i * 0.03, 0.3 - (i + 1) * 0.035, u + 0.35 - i * 0.03, 0.3 - i * 0.035, s);
+      fillP(c, w, h, [[u + 0.17, 0.125], [u + 0.19, 0], [u + 0.21, 0.125]], '#B9C0C7');
+      c.fillStyle = 'rgba(70,85,100,.3)';
+      for (let v = 0.32; v < 1; v += 0.02) c.fillRect(u * w, v * h, 0.38 * w, Math.max(0.5, h * 0.004));
+      R(c, w, h, u + 0.19, 0.3, u + 0.38, 1, 'rgba(20,30,40,.12)');
+    }
+    R(c, w, h, 0.38, 0.56, 0.62, 0.59, '#8A949E');
+  }},
+  lakhta: {aspect: 0.12, shade: 0.5, draw(c, w, h) {
+    const pts = [[0.5, 0], [0.62, 0.3], [0.85, 0.7], [1, 1], [0, 1], [0.15, 0.7], [0.38, 0.3]];
+    fillP(c, w, h, pts, '#96B9D4');
+    c.save(); P(c, w, h, pts); c.clip();
+    c.strokeStyle = 'rgba(40,70,100,.35)'; c.lineWidth = Math.max(0.5, w * 0.03);
+    for (let i = 0; i < 16; i++) { c.beginPath(); c.moveTo(0, (0.2 + i * 0.07) * h); c.lineTo(w, (0.1 + i * 0.07) * h); c.stroke(); }
+    c.restore();
+  }},
+  taipei101: {aspect: 0.16, shade: 0.5, draw(c, w, h) {
+    const g = '#6F9E90';
+    R(c, w, h, 0.02, 0.84, 0.98, 1, g);
+    for (let i = 0; i < 8; i++) { const v = 0.84 - (i + 1) * 0.07; fillP(c, w, h, [[0.2, v + 0.07], [0.12, v], [0.88, v], [0.8, v + 0.07]], i % 2 ? g : '#7FAE9F'); }
+    R(c, w, h, 0.3, 0.18, 0.7, 0.28, g);
+    R(c, w, h, 0.4, 0.12, 0.6, 0.18, '#5E8C7F');
+    fillP(c, w, h, [[0.46, 0.12], [0.5, 0], [0.54, 0.12]], '#9AA7A2');
+  }},
+  lotte: {aspect: 0.15, shade: 0.5, draw(c, w, h) {
+    c.beginPath(); c.moveTo(0, h); c.quadraticCurveTo(0.12 * w, 0.3 * h, 0.44 * w, 0); c.lineTo(0.5 * w, 0.04 * h); c.lineTo(0.56 * w, 0); c.quadraticCurveTo(0.88 * w, 0.3 * h, w, h); c.closePath();
+    c.fillStyle = '#D5DEE4'; c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke();
+    L(c, w, h, [[0.5, 0.05], [0.5, 1]], 'rgba(90,110,130,.4)', Math.max(0.5, w * 0.02));
+  }},
+  pingan: {aspect: 0.15, shade: 0.5, draw(c, w, h) {
+    fillP(c, w, h, [[0.02, 1], [0.14, 0.15], [0.3, 0.1], [0.5, 0.12], [0.7, 0.1], [0.86, 0.15], [0.98, 1]], '#BEC6CD', EDGE);
+    fillP(c, w, h, [[0.46, 0.12], [0.5, 0], [0.54, 0.12]], '#A9B2BA');
+    c.fillStyle = 'rgba(70,85,100,.35)';
+    for (const u of [0.2, 0.35, 0.5, 0.65, 0.8]) c.fillRect(u * w, 0.16 * h, Math.max(0.5, w * 0.025), 0.83 * h);
+  }},
+  shanghai: {aspect: 0.15, shade: 0.5, draw(c, w, h) {
+    const pts = [[0, 1], [0.08, 0.5], [0.25, 0.1], [0.4, 0.03], [0.62, 0], [0.7, 0.06], [0.78, 0.4], [0.92, 0.75], [1, 1]];
+    fillP(c, w, h, pts, '#A2BFCF');
+    c.save(); P(c, w, h, pts); c.clip();
+    L(c, w, h, [[0.2, 1], [0.35, 0.6], [0.55, 0.25], [0.65, 0]], 'rgba(40,70,95,.45)', Math.max(0.6, w * 0.04));
+    c.fillStyle = 'rgba(40,70,95,.18)';
+    for (let v = 0.1; v < 1; v += 0.1) c.fillRect(0, v * h, w, Math.max(0.5, h * 0.004));
+    c.restore();
+  }},
+  merdeka: {aspect: 0.13, shade: null, draw(c, w, h) {
+    R(c, w, h, 0.495, 0, 0.505, 0.24, '#B9C0C7');
+    const pts = [[0, 1], [0.08, 0.5], [0.3, 0.24], [0.5, 0.2], [0.7, 0.24], [0.92, 0.5], [1, 1]];
+    fillP(c, w, h, pts, '#86A8C3');
+    for (let i = 0; i < 9; i++) { const v = 0.24 + i * 0.085; fillP(c, w, h, [[0.1, v + 0.08], [0.5, v], [0.9, v + 0.08]], i % 2 ? '#7598B5' : '#9CBAD1'); }
+    fillP(c, w, h, [[0.5, 0.2], [0.92, 0.5], [1, 1], [0.5, 1]], 'rgba(20,40,60,.15)');
+  }},
+  kvly: {aspect: 0.3, shade: null, draw(c, w, h) {
+    c.strokeStyle = 'rgba(120,130,140,.55)'; c.lineWidth = Math.max(0.5, w * 0.004);
+    for (const v of [0.1, 0.3, 0.5, 0.7]) { c.beginPath(); c.moveTo(0, h); c.lineTo(0.5 * w, v * h); c.lineTo(w, h); c.stroke(); }
+    for (let i = 0; i < 14; i++) R(c, w, h, 0.49, i / 14, 0.51, (i + 1) / 14, i % 2 ? '#F2F2EF' : '#D7322B');
+  }},
+  skytower: {aspect: 0.13, shade: 0.5, draw(c, w, h) {
+    fillP(c, w, h, [[0.3, 1], [0.4, 0.3], [0.6, 0.3], [0.7, 1]], '#D2D0CA', EDGE);
+    for (const [u, v] of [[0.12, 0.93], [0.88, 0.93]]) L(c, w, h, [[u, 1], [0.42, 0.7]], '#BFBDB6', Math.max(0.6, w * 0.06));
+    fillP(c, w, h, [[0.1, 0.34], [0.2, 0.3], [0.8, 0.3], [0.9, 0.34], [0.8, 0.38], [0.2, 0.38]], '#BDBBB4', EDGE);
+    R(c, w, h, 0.1, 0.335, 0.9, 0.35, '#5F6B74');
+    fillP(c, w, h, [[0.25, 0.3], [0.3, 0.26], [0.7, 0.26], [0.75, 0.3]], '#C9C7C0');
+    fillP(c, w, h, [[0.44, 0.26], [0.49, 0], [0.51, 0], [0.56, 0.26]], '#E4E2DC', EDGE);
+  }},
+  macau: {aspect: 0.14, shade: 0.5, draw(c, w, h) {
+    R(c, w, h, 0.38, 0.35, 0.62, 1, '#D8D6D0');
+    R(c, w, h, 0.2, 0.9, 0.8, 1, '#C4C1BA');
+    fillP(c, w, h, [[0.02, 0.38], [0.1, 0.32], [0.9, 0.32], [0.98, 0.38], [0.85, 0.44], [0.15, 0.44]], '#C8C6BF', EDGE);
+    R(c, w, h, 0.02, 0.365, 0.98, 0.38, '#5F6B74');
+    fillP(c, w, h, [[0.3, 0.32], [0.4, 0.26], [0.6, 0.26], [0.7, 0.32]], '#D0CEC7');
+    fillP(c, w, h, [[0.46, 0.26], [0.495, 0], [0.505, 0], [0.54, 0.26]], '#E4E2DC', EDGE);
+  }},
+  strat: {aspect: 0.14, shade: 0.5, draw(c, w, h) {
+    fillP(c, w, h, [[0.2, 1], [0.4, 0.2], [0.6, 0.2], [0.8, 1]], '#E3E1DA', EDGE);
+    L(c, w, h, [[0.5, 0.2], [0.5, 1]], 'rgba(100,100,100,.3)', Math.max(0.5, w * 0.03));
+    fillP(c, w, h, [[0.04, 0.18], [0.14, 0.1], [0.86, 0.1], [0.96, 0.18], [0.84, 0.24], [0.16, 0.24]], '#CFCDC6', EDGE);
+    for (const v of [0.14, 0.19]) R(c, w, h, 0.06, v, 0.94, v + 0.012, '#5F6B74');
+    R(c, w, h, 0.46, 0.0, 0.54, 0.1, '#D7322B');
+  }},
+  berlintv: {aspect: 0.14, shade: 0.5, draw(c, w, h) {
+    fillP(c, w, h, [[0.3, 1], [0.42, 0.44], [0.58, 0.44], [0.7, 1]], '#D8D6CF', EDGE);
+    E(c, w, h, 0.5, 0.4, 0.45, 0.043, '#B9C1C9', EDGE);
+    R(c, w, h, 0.06, 0.39, 0.94, 0.41, '#5F6B74');
+    R(c, w, h, 0.45, 0.25, 0.55, 0.36, '#D8D6CF');
+    for (let i = 0; i < 8; i++) R(c, w, h, 0.47, i * 0.031, 0.53, (i + 1) * 0.031, i % 2 ? '#F2F2EF' : '#D7322B');
+  }},
+  canton: {aspect: 0.15, shade: 0.5, draw(c, w, h) {
+    const pts = [[0.02, 1], [0.3, 0.6], [0.36, 0.45], [0.26, 0.28], [0.74, 0.28], [0.64, 0.45], [0.7, 0.6], [0.98, 1]];
+    fillP(c, w, h, pts, '#B8C4CF');
+    c.save(); P(c, w, h, pts); c.clip();
+    c.strokeStyle = '#6F8294'; c.lineWidth = Math.max(0.5, w * 0.02);
+    for (let i = -8; i < 8; i++) { c.beginPath(); c.moveTo((i * 0.12) * w, h); c.lineTo((i * 0.12 + 0.6) * w, 0.28 * h); c.stroke(); }
+    c.restore();
+    fillP(c, w, h, [[0.4, 0.28], [0.47, 0.12], [0.53, 0.12], [0.6, 0.28]], '#D7DDE3');
+    R(c, w, h, 0.49, 0, 0.51, 0.12, '#9AA7B3');
+  }},
+  ostankino: {aspect: 0.13, shade: 0.5, draw(c, w, h) {
+    fillP(c, w, h, [[0.02, 1], [0.3, 0.86], [0.42, 0.5], [0.58, 0.5], [0.7, 0.86], [0.98, 1]], '#D9D7D0', EDGE);
+    fillP(c, w, h, [[0.2, 0.52], [0.25, 0.48], [0.75, 0.48], [0.8, 0.52], [0.72, 0.55], [0.28, 0.55]], '#B9C1C9', EDGE);
+    R(c, w, h, 0.44, 0.33, 0.56, 0.48, '#D9D7D0');
+    for (let i = 0; i < 11; i++) R(c, w, h, 0.47, i * 0.03, 0.53, (i + 1) * 0.03, i % 2 ? '#F2F2EF' : '#D7322B');
+  }},
+  /* ---- natural wonders ---- */
+  elcapitan: mountainArt({aspect: 1.4, rock: '#CBC5B8', rock2: 'rgba(60,55,45,.18)', ridge: [[0.04, 0.72], [0.18, 0.32], [0.32, 0.1], [0.46, 0.0], [0.6, 0.01], [0.7, 0.05], [0.72, 0.4], [0.75, 1]], green: '#476E40', greenV: 0.88}),
+  sugarloaf: mountainArt({aspect: 1.25, rock: '#6F6B64', ridge: [[0.04, 0.9], [0.12, 0.5], [0.22, 0.2], [0.35, 0.04], [0.5, 0], [0.62, 0.05], [0.72, 0.25], [0.8, 0.6], [0.88, 1]], green: '#4A7A45', greenV: 0.72}),
+  uluru: mountainArt({aspect: 3.8, rock: '#C35B2E', rock2: 'rgba(90,30,10,.25)', ridge: [[0.03, 0.9], [0.06, 0.4], [0.12, 0.1], [0.25, 0.02], [0.5, 0], [0.75, 0.03], [0.88, 0.12], [0.95, 0.45], [0.98, 0.95]],
+    extra(c, w, h) { c.fillStyle = 'rgba(90,30,10,.18)'; for (let u = 0.08; u < 0.95; u += 0.05) c.fillRect(u * w, 0.1 * h, Math.max(0.5, w * 0.004), 0.85 * h); }}),
+  tablemtn: mountainArt({aspect: 3, rock: '#817D70', ridge: [[0.05, 0.55], [0.15, 0.08], [0.3, 0.02], [0.6, 0], [0.8, 0.03], [0.9, 0.12], [0.97, 0.5]], green: '#5F8A4E', greenV: 0.62}),
+  bennevis: mountainArt({aspect: 2.6, rock: '#6E7568', ridge: [[0.1, 0.6], [0.3, 0.25], [0.45, 0.05], [0.55, 0], [0.7, 0.1], [0.9, 0.45]], snow: 0.08, green: '#6F8F55', greenV: 0.5}),
+  mtwashington: mountainArt({aspect: 2.4, rock: '#7B7F78', ridge: [[0.12, 0.62], [0.3, 0.3], [0.45, 0.08], [0.52, 0], [0.62, 0.07], [0.8, 0.35], [0.95, 0.7]], snow: 0.1, green: '#4E7A45', greenV: 0.45}),
+  kosciuszko: mountainArt({aspect: 3, rock: '#8C8A76', ridge: [[0.1, 0.7], [0.3, 0.35], [0.5, 0.05], [0.55, 0], [0.7, 0.15], [0.9, 0.6]], green: '#7C9A5A', greenV: 0.25}),
+  sthelens: mountainArt({aspect: 2.6, rock: '#8A857C', ridge: [[0.1, 0.7], [0.3, 0.2], [0.38, 0.03], [0.45, 0], [0.5, 0.15], [0.58, 0.18], [0.66, 0.05], [0.75, 0.15], [0.9, 0.6]], snow: 0.12, green: '#6B8A55', greenV: 0.8}),
+  olympus: mountainArt({aspect: 1.9, rock: '#9A9483', ridge: [[0.08, 0.6], [0.22, 0.3], [0.3, 0.35], [0.4, 0.1], [0.46, 0.15], [0.52, 0], [0.58, 0.12], [0.68, 0.08], [0.78, 0.35], [0.92, 0.65]], snow: 0.2, green: '#6D8B55', greenV: 0.6}),
+  kinabalu: mountainArt({aspect: 1.8, rock: '#7C7F85', ridge: [[0.1, 0.75], [0.25, 0.35], [0.33, 0.08], [0.38, 0.12], [0.44, 0], [0.5, 0.1], [0.56, 0.04], [0.63, 0.12], [0.75, 0.4], [0.92, 0.8]], green: '#3F7A3F', greenV: 0.35}),
+  maunakea: mountainArt({aspect: 4, rock: '#7A5C4A', rock2: 'rgba(40,25,15,.25)', ridge: [[0.06, 0.8], [0.25, 0.35], [0.4, 0.08], [0.5, 0], [0.6, 0.08], [0.75, 0.35], [0.94, 0.8]], snow: 0.08, green: '#5E7F4B', greenV: 0.78,
+    extra(c, w, h) { for (const u of [0.46, 0.53]) E(c, w, h, u, 0.035, 0.012, 0.03, '#F4F6F8'); }}),
+  rainier: mountainArt({aspect: 2.5, rock: '#6B6F78', ridge: [[0.08, 0.8], [0.25, 0.4], [0.4, 0.08], [0.5, 0], [0.6, 0.07], [0.75, 0.38], [0.92, 0.8]], snow: 0.55, green: '#3E6B45', greenV: 0.8}),
+  whitney: mountainArt({aspect: 2.2, rock: '#8B8A86', ridge: [[0.08, 0.7], [0.2, 0.3], [0.28, 0.12], [0.34, 0.2], [0.42, 0.05], [0.48, 0.12], [0.55, 0], [0.62, 0.1], [0.7, 0.2], [0.8, 0.4], [0.93, 0.75]], snow: 0.2}),
+  matterhorn: mountainArt({aspect: 1.1, rock: '#6F6A63', rock2: 'rgba(20,20,20,.3)', ridge: [[0.08, 0.8], [0.3, 0.45], [0.4, 0.2], [0.47, 0.03], [0.5, 0], [0.56, 0.08], [0.6, 0.25], [0.75, 0.5], [0.92, 0.85]], snow: 0.35}),
+  kenya: mountainArt({aspect: 1.8, rock: '#5E5A56', ridge: [[0.08, 0.8], [0.3, 0.5], [0.4, 0.3], [0.45, 0.1], [0.49, 0], [0.53, 0.08], [0.57, 0.25], [0.7, 0.45], [0.92, 0.8]], snow: 0.18, green: '#4F7A40', greenV: 0.7}),
+  elbrus: mountainArt({aspect: 2.4, rock: '#6E6A66', ridge: [[0.08, 0.8], [0.25, 0.4], [0.35, 0.05], [0.4, 0], [0.46, 0.08], [0.54, 0.04], [0.6, 0.07], [0.75, 0.4], [0.92, 0.8]], snow: 0.6}),
+  kilimanjaro: mountainArt({aspect: 3.2, rock: '#6F5E52', ridge: [[0.06, 0.85], [0.25, 0.35], [0.38, 0.05], [0.45, 0], [0.58, 0], [0.65, 0.06], [0.78, 0.4], [0.94, 0.85]], snow: 0.1, green: '#6E8B4A', greenV: 0.72}),
+  denali: mountainArt({aspect: 2.2, rock: '#5D6470', ridge: [[0.06, 0.75], [0.18, 0.45], [0.28, 0.25], [0.36, 0.18], [0.45, 0.02], [0.5, 0], [0.56, 0.05], [0.65, 0.12], [0.75, 0.3], [0.86, 0.5], [0.95, 0.8]], snow: 0.7}),
+  aconcagua: mountainArt({aspect: 2, rock: '#8A6F5A', rock2: 'rgba(60,40,25,.28)', ridge: [[0.08, 0.8], [0.25, 0.45], [0.38, 0.15], [0.46, 0], [0.52, 0.05], [0.6, 0.18], [0.72, 0.35], [0.92, 0.8]], snow: 0.3}),
+  k2: mountainArt({aspect: 1.3, rock: '#5B5F68', rock2: 'rgba(15,18,25,.32)', ridge: [[0.08, 0.85], [0.28, 0.45], [0.42, 0.12], [0.5, 0], [0.58, 0.1], [0.72, 0.4], [0.92, 0.85]], snow: 0.6}),
+  olympusmons: mountainArt({aspect: 5, rock: '#B5623C', rock2: 'rgba(80,25,10,.28)', ridge: [[0.04, 0.8], [0.12, 0.45], [0.2, 0.2], [0.35, 0.05], [0.44, 0], [0.5, 0.04], [0.56, 0], [0.65, 0.05], [0.8, 0.2], [0.88, 0.45], [0.96, 0.8]],
+    extra(c, w, h) { R(c, w, h, 0, 0.82, 1, 1, 'rgba(90,30,10,.25)'); }}),
+});
+
 /* ---------------- rules ---------------- */
 const ROUNDS = 10, SECONDS = 20, REVEAL_MS = 9000;
-const G_MIN = 1/8, G_MAX = 8, ZERO_AT = Math.log(2), BULLSEYE = Math.log(1.03);
+const G_MIN = 10 ** -6.5, G_MAX = 10 ** 6.5, SLIDER_STEPS = 4000;
 const COLORS = ['#E4572E','#3A7FD0','#23905A','#9B5DE5','#D99A00','#D6337F','#12A4B6','#7F8F2A','#C0632B','#5C6BC0'];
 const EMOJI_FONT = '"Noto Color Emoji","Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol",sans-serif';
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+// how forgiving scoring is: 1 for pairs up to 10x apart, growing with each extra factor of 10
+const tolerance = r => Math.max(1, Math.abs(Math.log10(r)));
 function scoreFor(g, r) {
   if (g == null) return 0;
-  const err = Math.abs(Math.log(g / r));
-  if (err <= BULLSEYE) return 100;
-  return Math.max(0, Math.round(100 * (1 - err / ZERO_AT)));
+  const t = tolerance(r), err = Math.abs(Math.log(g / r));
+  if (err <= Math.log(1.03) * t) return 100;
+  return Math.max(0, Math.round(100 * (1 - err / (Math.log(2) * t))));
 }
 function verdict(p, g) {
   if (g == null) return 'No answer';
@@ -762,6 +1612,8 @@ function offBy(g, r) {
   if (g == null) return 'no answer';
   const q = g / r;
   if (Math.abs(Math.log(q)) < 0.005) return 'exact';
+  if (q >= 3) return `${fmtNum(q)}× too big`;
+  if (q <= 1 / 3) return `${fmtNum(1 / q)}× too small`;
   return q > 1 ? `${Math.round((q - 1) * 100)}% too big` : `${Math.round((1 - q) * 100)}% too small`;
 }
 
@@ -772,10 +1624,14 @@ const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 const pick = a => a[Math.floor(Math.random() * a.length)];
 const rid = n => Array.from(crypto.getRandomValues(new Uint8Array(n)), b => 'abcdefghijkmnpqrstuvwxyz23456789'[b % 32]).join('');
 const clampG = g => Math.min(G_MAX, Math.max(G_MIN, g));
-const fmtX = g => (g >= 10 ? g.toFixed(1) : g.toFixed(2)) + '×';
+function fmtNum(x) {
+  if (x >= 100) return Math.round(x).toLocaleString('en-US');
+  return String(+x.toFixed(x >= 10 ? 1 : 2));
+}
+const fmtX = g => (g >= 0.1 ? (g < 10 ? g.toFixed(2) : fmtNum(g)) + '×' : `1/${fmtNum(1 / g)}`);
 function fmtLen(m) {
   if (m < 0.01) return `${+(m * 1000).toFixed(1)} mm`;
-  if (m < 1) return `${+(m * 100).toFixed(m < 0.1 ? 1 : 0)} cm`;
+  if (m < 1) return `${+(m * 100).toFixed(1)} cm`;
   if (m >= 1000) return `${Math.round(m).toLocaleString('en-US')} m`;
   return `${+m.toFixed(m < 10 ? 2 : 1)} m`;
 }
@@ -929,6 +1785,43 @@ function drawStage(cv, s) {
   const tc = T[s.tgtColor || 'measure'];
   bracket(c, s.tgt, x1, aw * k * s.g, ah * k * s.g, ground, 'right', tc, false);
 
+  // tiny objects: draw a zoomed-in view so they never vanish next to something huge
+  const ZMIN = 26, tgtMax = Math.max(s.g, s.ghost != null && s.ghost <= s.g * 3 ? s.ghost : 0);
+  let zoom = null;
+  if (k < ZMIN) zoom = {who: 'ref', foot: x0 + rw * k / 2, unit: k};
+  else if (k * tgtMax < ZMIN) zoom = {who: 'tgt', foot: x1 + aw * k * tgtMax / 2, unit: k * tgtMax};
+  if (zoom) {
+    const bh = Math.round(Math.min(150, Math.max(100, (ground - top) * 0.55))), bw = Math.round(bh * 1.15);
+    const bx = Math.max(8, Math.min(W - bw - 8, zoom.foot - bw / 2));
+    const by = Math.max(top - 6, ground - bh - 40);
+    c.save();
+    c.strokeStyle = T.muted; c.setLineDash([3, 3]); c.lineWidth = 1;
+    c.beginPath(); c.moveTo(bx + bw / 2, by + bh); c.lineTo(zoom.foot, ground - 9); c.stroke();
+    c.setLineDash([]);
+    c.fillStyle = T.ink; c.beginPath(); c.moveTo(zoom.foot, ground - 1); c.lineTo(zoom.foot - 4, ground - 8); c.lineTo(zoom.foot + 4, ground - 8); c.closePath(); c.fill();
+    c.fillStyle = T.stage; c.strokeStyle = T.line; c.lineWidth = 1.5;
+    c.beginPath(); c.roundRect(bx, by, bw, bh, 8); c.fill(); c.stroke();
+    c.clip();
+    const gy = by + bh - 14;
+    c.lineWidth = 1; c.beginPath(); c.moveTo(bx, gy); c.lineTo(bx + bw, gy); c.stroke();
+    const isRef = zoom.who === 'ref', o = isRef ? s.ref : s.tgt, m = isRef ? mr : mt, asp = isRef ? rw : aw;
+    const hz = Math.min(bh - 42, (bw - 34) / asp), z = hz / zoom.unit, left = bx + (bw - asp * hz) / 2;
+    if (isRef) {
+      drawEmoji(c, o, m, k * z, left, gy, 1);
+      bracket(c, o, left, asp * k * z, k * z, gy, 'left', T.ink, false);
+    } else {
+      if (s.ghost != null) {
+        drawEmoji(c, o, m, k * s.ghost * z, left, gy, 0.32);
+        bracket(c, o, left, asp * k * s.ghost * z, k * s.ghost * z, gy, 'right', T.red, true, 6);
+      }
+      drawEmoji(c, o, m, k * s.g * z, left, gy, 1);
+      bracket(c, o, left, asp * k * s.g * z, k * s.g * z, gy, 'right', T[s.tgtColor || 'measure'], false);
+    }
+    c.font = '500 10px "IBM Plex Mono", ui-monospace, monospace'; c.fillStyle = T.muted; c.textBaseline = 'top';
+    c.fillText(`zoom ×${fmtNum(z)}`, bx + 8, by + 7);
+    c.restore();
+  }
+
   const small = W < 420;
   const f1 = `600 ${small ? 12 : 14}px "Instrument Sans", system-ui, sans-serif`;
   const f2 = `500 ${small ? 11 : 12}px "IBM Plex Mono", ui-monospace, monospace`;
@@ -1004,18 +1897,26 @@ const activePlayers = () => players.filter(p => p.online !== false);
 
 function makeRounds(n) {
   const used = new Set(), out = [];
-  for (let guard = 0; out.length < n && guard < 600; guard++) {
-    const ref = pick(OBJ.filter(o => !used.has(o.id)));
-    const cands = OBJ.filter(o => {
-      if (o.id === ref.id || used.has(o.id)) return false;
-      const k = Math.abs(Math.log(o.s / ref.s));
-      return k >= Math.log(1.6) && k <= Math.log(6);
-    });
-    if (!cands.length) continue;
-    const t = pick(cands);
-    used.add(ref.id); used.add(t.id);
-    out.push(`${ref.id}|${t.id}`);
-  }
+  // 40% close pairs (1.6x-6x), 30% far (6x-100x), 30% very far (over 100x, e.g. a bird next to a mountain)
+  const bands = Array.from({length: n}, (_, i) => i < Math.round(n * 0.4) ? [1.6, 6] : i < Math.round(n * 0.7) ? [6, 100] : [100, Infinity]);
+  for (let i = bands.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [bands[i], bands[j]] = [bands[j], bands[i]]; }
+  const tryPick = (lo, hi) => {
+    for (let t = 0; t < 80; t++) {
+      const ref = pick(OBJ.filter(o => !used.has(o.id)));
+      const cands = OBJ.filter(o => {
+        if (o.id === ref.id || used.has(o.id) || (o.e && o.e === ref.e)) return false;
+        const k = Math.abs(Math.log(o.s / ref.s));
+        return k >= Math.log(lo) && k <= Math.log(hi);
+      });
+      if (!cands.length) continue;
+      const tg = pick(cands);
+      used.add(ref.id); used.add(tg.id);
+      out.push(`${ref.id}|${tg.id}`);
+      return true;
+    }
+    return false;
+  };
+  for (const [lo, hi] of bands) if (!tryPick(lo, hi)) tryPick(1.6, Infinity);
   return out;
 }
 
@@ -1358,7 +2259,8 @@ function stageState() {
     const guess = local.touched ? local.g : null;
     const tgtLines = [[`${fmtLen(tgt.s)} tall`, 'green']];
     if (guess != null) tgtLines.push([`you: ${fmtLen(guess * ref.s)}`, 'red']);
-    return {ref, tgt, g, fit: Math.max(r, guess ?? r, a ? a.from : r), ghost: guess, refLines, tgtLines, tgtColor: 'green'};
+    const near = x => (x != null && x <= r * 3 ? x : r); // keep the true answer in view even if the guess was wildly too big
+    return {ref, tgt, g, fit: Math.max(r, near(guess), near(a ? a.from : null)), ghost: guess, refLines, tgtLines, tgtColor: 'green'};
   }
   return {ref, tgt, g: local.g, fit: local.g, ghost: null, refLines, tgtLines: [['? tall', 'measure']], tgtColor: 'measure'};
 }
@@ -1377,7 +2279,7 @@ function renderRound() {
   $('#play-ui').hidden = reveal;
   $('#reveal').hidden = !reveal;
   $('#stage').classList.toggle('still', reveal || local.locked);
-  for (const id of ['#size', '#btn-minus', '#btn-plus', '#btn-lock']) $(id).disabled = local.locked;
+  for (const id of ['#size', '#btn-minus', '#btn-plus', '#btn-div10', '#btn-mul10', '#btn-lock']) $(id).disabled = local.locked;
   $('#btn-lock').textContent = local.locked ? 'Locked' : 'Lock in';
   $('#readout').innerHTML = `${fmtX(local.g)}<small>the height of ${esc(ref.a)}</small>`;
   $('#hint').hidden = local.locked;
@@ -1458,8 +2360,8 @@ function redrawAll() {
 
 /* ---------------- input ---------------- */
 const LG0 = Math.log(G_MIN), LG1 = Math.log(G_MAX);
-const gToSlider = g => Math.round((Math.log(g) - LG0) / (LG1 - LG0) * 1000);
-const sliderToG = v => Math.exp(LG0 + v / 1000 * (LG1 - LG0));
+const gToSlider = g => Math.round((Math.log(g) - LG0) / (LG1 - LG0) * SLIDER_STEPS);
+const sliderToG = v => Math.exp(LG0 + v / SLIDER_STEPS * (LG1 - LG0));
 function setG(g) {
   if (local.locked || room?.phase !== 'play') return;
   local.g = clampG(g); local.touched = true;
@@ -1470,6 +2372,8 @@ function setG(g) {
 $('#size').addEventListener('input', e => setG(sliderToG(+e.target.value)));
 $('#btn-minus').addEventListener('click', () => setG(local.g / 1.04));
 $('#btn-plus').addEventListener('click', () => setG(local.g * 1.04));
+$('#btn-div10').addEventListener('click', () => setG(local.g / 10));
+$('#btn-mul10').addEventListener('click', () => setG(local.g * 10));
 $('#btn-lock').addEventListener('click', () => { if (!local.locked) submit(); });
 let drag = null;
 const stageEl = $('#stage');
@@ -1480,7 +2384,7 @@ stageEl.addEventListener('pointerdown', e => {
 });
 stageEl.addEventListener('pointermove', e => {
   if (!drag || e.pointerId !== drag.id) return;
-  setG(drag.g * Math.exp((e.clientX - drag.x) * 0.008));
+  setG(drag.g * Math.exp((e.clientX - drag.x) * 0.012));
 });
 const endDrag = () => { drag = null; };
 stageEl.addEventListener('pointerup', endDrag);
@@ -1489,6 +2393,8 @@ document.addEventListener('keydown', e => {
   if (screen !== 'round' || room?.phase !== 'play' || local.locked) return;
   if (e.target.matches('input[type=text], button')) return;
   if (e.key === 'Enter') { e.preventDefault(); submit(); }
+  else if (e.key === 'PageUp') { e.preventDefault(); setG(local.g * 10); }
+  else if (e.key === 'PageDown') { e.preventDefault(); setG(local.g / 10); }
   else if (e.target !== $('#size') && (e.key === 'ArrowRight' || e.key === 'ArrowUp')) { e.preventDefault(); setG(local.g * 1.02); }
   else if (e.target !== $('#size') && (e.key === 'ArrowLeft' || e.key === 'ArrowDown')) { e.preventDefault(); setG(local.g / 1.02); }
 });
