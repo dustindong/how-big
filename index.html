@@ -241,13 +241,13 @@ input[type=range]:disabled{opacity:.5;cursor:not-allowed}
     <div class="hero">
       <h1 class="title">Size <span>Up</span></h1>
       <div class="tape-strip" aria-hidden="true" id="tape-strip"></div>
-      <p class="tagline">Two things, side by side. Stretch the second one until the pair is to scale. Closest guess wins.</p>
+      <p class="tagline">Two things, side by side. Stretch the second one until their heights are to scale. Closest guess wins.</p>
     </div>
 
     <div class="home-grid">
       <figure class="card demo" style="margin:0">
-        <canvas id="demo" aria-label="Example round: an adult person next to a giraffe being resized"></canvas>
-        <figcaption>Example round: the person is the reference. Resize the giraffe until it's the right height.</figcaption>
+        <canvas id="demo" aria-label="Example round: the Colosseum next to the Taj Mahal being resized"></canvas>
+        <figcaption>Example round: the Colosseum is the reference. Resize the Taj Mahal until it's the right height.</figcaption>
       </figure>
 
       <div class="card play">
@@ -268,8 +268,8 @@ input[type=range]:disabled{opacity:.5;cursor:not-allowed}
     </div>
 
     <div class="rules">
-      <div class="rule"><b>1. Read the reference</b><p>The first object is shown with its real size, like a compact car at 4.5 m long.</p></div>
-      <div class="rule"><b>2. Resize the second</b><p>Drag the slider, or drag sideways across the picture, to grow or shrink it.</p></div>
+      <div class="rule"><b>1. Read the reference</b><p>The first object is shown with its real height, like a compact car at 1.44 m tall.</p></div>
+      <div class="rule"><b>2. Resize the second</b><p>Drag the slider, or drag sideways across the picture, to make it taller or shorter.</p></div>
       <div class="rule"><b>3. Lock in by 20 s</b><p>Ten rounds per game. Everyone in the room gets the same pairs.</p></div>
     </div>
 
@@ -374,75 +374,367 @@ input[type=range]:disabled{opacity:.5;cursor:not-allowed}
 (() => {
 'use strict';
 
-/* ---------------- catalog: [id, emoji, phrase, size in metres, measured axis, dimension] ---------------- */
+/* ---------------- catalog: [id, emoji (null = drawn art), phrase, height in metres, how it's measured, short label] ----------------
+   Every comparison is by height. Sources: Wikipedia / official sites, checked Sept 2026. */
 const RAW = [
-  ['ant','🐜','a garden ant',0.005,'w','length'],
-  ['ladybug','🐞','a ladybug',0.007,'w','length'],
-  ['bee','🐝','a honeybee',0.013,'w','length'],
-  ['quarter','🪙','a US quarter',0.0243,'w','diameter'],
-  ['snail','🐌','a garden snail',0.035,'w','length'],
-  ['battery','🔋','an AA battery',0.05,'h','length'],
-  ['poolball','🎱','a pool ball',0.057,'w','diameter'],
-  ['egg','🥚','a chicken egg',0.057,'h','length'],
-  ['baseball','⚾','a baseball',0.074,'w','diameter'],
-  ['apple','🍎','an apple',0.08,'w','width'],
-  ['donut','🍩','a donut',0.09,'w','diameter'],
-  ['softball','🥎','a softball',0.097,'w','diameter'],
-  ['butterfly','🦋','a monarch butterfly',0.10,'w','wingspan'],
-  ['bulb','💡','a light bulb',0.11,'h','height'],
-  ['phone','📱','a smartphone',0.15,'h','height'],
-  ['volleyball','🏐','a volleyball',0.21,'w','diameter'],
-  ['soccer','⚽','a soccer ball',0.22,'w','diameter'],
-  ['basketball','🏀','a basketball',0.24,'w','diameter'],
-  ['hedgehog','🦔','a hedgehog',0.25,'w','length'],
-  ['sneaker','👟','a sneaker',0.29,'w','length'],
-  ['curling','🥌','a curling stone',0.29,'w','diameter'],
-  ['pineapple','🍍','a pineapple',0.30,'h','height'],
-  ['bucket','🪣','a 5-gallon bucket',0.37,'h','height'],
-  ['rat','🐀','a brown rat',0.40,'w','length'],
-  ['monitor','🖥️','a 24-inch monitor',0.54,'w','width'],
-  ['rooster','🐓','a rooster',0.55,'h','height'],
-  ['toilet','🚽','a toilet',0.76,'h','height'],
-  ['skateboard','🛹','a skateboard',0.80,'w','length'],
-  ['drum','🛢️','a 55-gallon drum',0.88,'h','height'],
-  ['chair','🪑','a dining chair',0.90,'h','height'],
-  ['dodo','🦤','a dodo',1.0,'h','height'],
-  ['penguin','🐧','an emperor penguin',1.1,'h','height'],
-  ['flamingo','🦩','a flamingo',1.3,'h','height'],
-  ['swan','🦢','a mute swan',1.5,'w','length'],
-  ['bathtub','🛁','a bathtub',1.5,'w','length'],
-  ['person','🧍','an adult person',1.7,'h','height'],
-  ['seal','🦭','a harbor seal',1.7,'w','length'],
-  ['bike','🚲','a bicycle',1.75,'w','length'],
-  ['deer','🦌','a white-tailed deer',1.8,'w','length'],
-  ['door','🚪','a door',2.03,'h','height'],
-  ['sofa','🛋️','a sofa',2.1,'w','length'],
-  ['camel','🐪','a camel',2.1,'h','height'],
-  ['leopard','🐆','a leopard',2.1,'w','length'],
-  ['motorcycle','🏍️','a motorcycle',2.1,'w','length'],
-  ['xmastree','🎄','a Christmas tree',2.3,'h','height'],
-  ['horse','🐎','a horse',2.4,'w','length'],
-  ['cow','🐄','a dairy cow',2.5,'w','length'],
-  ['tiger','🐅','a Bengal tiger',2.9,'w','length'],
-  ['mammoth','🦣','a woolly mammoth',3.0,'h','height'],
-  ['elephant','🐘','an African elephant',3.2,'h','height'],
-  ['hippo','🦛','a hippo',3.5,'w','length'],
-  ['rhino','🦏','a white rhino',3.8,'w','length'],
-  ['moai','🗿','a moai statue',4.0,'h','height'],
-  ['car','🚗','a compact car',4.5,'w','length'],
-  ['minivan','🚐','a minivan',5.2,'w','length'],
-  ['giraffe','🦒','a giraffe',5.2,'h','height'],
-  ['pickup','🛻','a pickup truck',5.9,'w','length'],
-  ['firetruck','🚒','a fire engine',10,'w','length'],
-  ['bus','🚌','a city bus',12,'w','length'],
-  ['trex','🦖','a T. rex',12,'w','length'],
-  ['brachio','🦕','a Brachiosaurus',12,'h','height'],
-  ['whale','🐋','a blue whale',25,'w','length'],
+  ['battery','🔋','an AA battery',0.0505,'',''],
+  ['egg','🥚','a chicken egg',0.057,'standing on end',''],
+  ['poolball','🎱','a pool ball',0.057,'',''],
+  ['baseball','⚾','a baseball',0.074,'',''],
+  ['softball','🥎','a softball',0.097,'',''],
+  ['soupcan','🥫','a soup can',0.102,'',''],
+  ['bulb','💡','a light bulb',0.109,'',''],
+  ['phone','📱','a smartphone',0.147,'standing upright',''],
+  ['volleyball','🏐','a volleyball',0.21,'',''],
+  ['soccer','⚽','a soccer ball',0.22,'',''],
+  ['basketball','🏀','a basketball',0.24,'',''],
+  ['trophy','🏆','the FIFA World Cup trophy',0.368,'','World Cup trophy'],
+  ['bucket','🪣','a 5-gallon bucket',0.37,'','Bucket'],
+  ['leopard','🐆','a leopard',0.65,'at the shoulder',''],
+  ['dodo','🦤','a dodo',0.7,'',''],
+  ['toilet','🚽','a toilet',0.76,'',''],
+  ['stopsign','🛑','a stop sign',0.76,'the sign itself',''],
+  ['drum','🛢️','a 55-gallon drum',0.88,'','Oil drum'],
+  ['chair','🪑','a dining chair',0.9,'',''],
+  ['tiger','🐅','a Bengal tiger',1.0,'at the shoulder','Tiger'],
+  ['penguin','🐧','an emperor penguin',1.0,'standing','Emperor penguin'],
+  ['bike','🚲','a bicycle',1.0,'',''],
+  ['trafficlight','🚦','a traffic light',1.07,'the signal itself',''],
+  ['motorcycle','🏍️','a sport motorcycle',1.14,'','Motorcycle'],
+  ['flamingo','🦩','a flamingo',1.3,'',''],
+  ['hippo','🦛','a hippo',1.4,'at the shoulder',''],
+  ['car','🚗','a compact car',1.44,'',''],
+  ['cow','🐄','a Holstein cow',1.5,'at the shoulder','Cow'],
+  ['horse','🐎','a horse',1.6,'at the withers',''],
+  ['person','🧍','an adult person',1.7,'',''],
+  ['llama','🦙','a llama',1.75,'to the top of its head',''],
+  ['minivan','🚐','a minivan',1.77,'',''],
+  ['rhino','🦏','a white rhino',1.8,'at the shoulder',''],
+  ['bison','🦬','an American bison',1.8,'at the shoulder','Bison'],
+  ['pickup','🛻','a full-size pickup truck',1.96,'','Pickup truck'],
+  ['door','🚪','a door',2.03,'',''],
+  ['camel','🐪','a camel',2.2,'to the top of the hump',''],
+  ['xmastree','🎄','a 7.5-foot Christmas tree',2.29,'','Christmas tree'],
+  ['goal','🥅','a soccer goal',2.44,'',''],
+  ['mammoth','🦣','a woolly mammoth',3.0,'at the shoulder',''],
+  ['elephant','🐘','an African elephant',3.2,'at the shoulder','Elephant'],
+  ['bus','🚌','a city bus',3.2,'',''],
+  ['moai','🗿','a moai statue',4.0,'average height','Moai'],
+  ['giraffe','🦒','a male giraffe',5.2,'','Giraffe'],
+  ['stonehenge',null,'the tallest stone at Stonehenge',6.7,'above ground','Stonehenge'],
+  ['brachio','🦕','a Brachiosaurus',12,'with its head raised',''],
+  ['saguaro','🌵','a tall saguaro cactus',12,'','Saguaro cactus'],
+  ['hollywood',null,'the Hollywood sign',13.4,'letter height','Hollywood sign'],
+  ['sphinx',null,'the Great Sphinx of Giza',20,'','Great Sphinx'],
+  ['christ',null,'Christ the Redeemer',38,'including its pedestal','Christ the Redeemer'],
+  ['liberty','🗽','the Statue of Liberty',46,'heel to torch, without the pedestal','Statue of Liberty'],
+  ['himeji','🏯','Himeji Castle',46.4,'main keep, including its stone base','Himeji Castle'],
+  ['colosseum',null,'the Colosseum',48,'outer wall','Colosseum'],
+  ['pisa',null,'the Leaning Tower of Pisa',56.7,'on its high side','Tower of Pisa'],
+  ['opera',null,'the Sydney Opera House',67,'highest roof, above sea level','Sydney Opera House'],
+  ['taj',null,'the Taj Mahal',73,'','Taj Mahal'],
+  ['bigben',null,'Big Ben',96,'the Elizabeth Tower','Big Ben'],
+  ['saturnv',null,'a Saturn V rocket',111,'','Saturn V rocket'],
+  ['hyperion','🌲','Hyperion, the world\'s tallest tree',116,'a coast redwood','Hyperion (redwood)'],
+  ['londoneye','🎡','the London Eye',135,'','London Eye'],
+  ['pyramid',null,'the Great Pyramid of Giza',138.5,'as it stands today','Great Pyramid'],
+  ['washington',null,'the Washington Monument',169,'','Washington Monument'],
+  ['spaceneedle',null,'the Space Needle',184,'','Space Needle'],
+  ['arch',null,'the Gateway Arch',192,'','Gateway Arch'],
+  ['goldengate',null,'a Golden Gate Bridge tower',227,'above the water','Golden Gate tower'],
+  ['eiffel',null,'the Eiffel Tower',330,'','Eiffel Tower'],
+  ['tokyotower','🗼','Tokyo Tower',333,'','Tokyo Tower'],
+  ['empire',null,'the Empire State Building',443,'to the tip of its antenna','Empire State Building'],
+  ['onewtc',null,'One World Trade Center',541,'','One World Trade Center'],
+  ['cntower',null,'the CN Tower',553,'','CN Tower'],
+  ['skytree',null,'Tokyo Skytree',634,'','Tokyo Skytree'],
+  ['burj',null,'the Burj Khalifa',828,'','Burj Khalifa'],
+  ['fuji','🗻','Mount Fuji',3776,'above sea level','Mount Fuji'],
+  ['everest','🏔️','Mount Everest',8849,'above sea level','Mount Everest'],
 ];
-const OBJ = RAW.map(([id,e,a,s,ax,d]) => ({id, e, a, s, ax, d, noun: a.replace(/^an? /, '')}));
+const cap0 = s => s.charAt(0).toUpperCase() + s.slice(1);
+const OBJ = RAW.map(([id, e, a, s, note, label]) => {
+  const noun = a.replace(/^(an?|the) /, '');
+  return {id, e, a, s, note, noun, label: label || cap0(noun), ax: 'h'};
+});
 const BY = Object.fromEntries(OBJ.map(o => [o.id, o]));
-const ADJ = {height:'tall', length:'long', diameter:'across', width:'wide', wingspan:'wingspan'};
-const VERB = {height:'How tall is', length:'How long is', diameter:'How big is', width:'How wide is', wingspan:'How wide is'};
+
+/* ---------------- drawn landmark art (local coords: 0..w across, 0..h down) ---------------- */
+function P(c, w, h, pts) { c.beginPath(); pts.forEach(([u, v], i) => i ? c.lineTo(u * w, v * h) : c.moveTo(u * w, v * h)); c.closePath(); }
+function fillP(c, w, h, pts, fill, line) { P(c, w, h, pts); c.fillStyle = fill; c.fill(); if (line) { c.strokeStyle = line; c.lineWidth = 1; c.stroke(); } }
+function R(c, w, h, u0, v0, u1, v1, fill) { c.fillStyle = fill; c.fillRect(u0 * w, v0 * h, (u1 - u0) * w, (v1 - v0) * h); }
+function symP(half) { return half.concat(half.slice().reverse().map(([u, v]) => [1 - u, v])); }
+const EDGE = 'rgba(40,50,60,.35)';
+
+const ART = {
+  eiffel: {aspect: 0.38, shade: 0.5, draw(c, w, h) {
+    const half = [[0.5, 0], [0.49, 0.03], [0.475, 0.1], [0.46, 0.2], [0.44, 0.33], [0.415, 0.45], [0.37, 0.56], [0.31, 0.66],
+      [0.24, 0.76], [0.16, 0.87], [0.07, 0.97], [0.04, 1], [0.19, 1], [0.23, 0.94], [0.29, 0.885], [0.38, 0.85], [0.5, 0.84]];
+    fillP(c, w, h, symP(half), '#8A6849');
+    R(c, w, h, 0.17, 0.815, 0.83, 0.84, '#5E4631');
+    R(c, w, h, 0.3, 0.645, 0.7, 0.662, '#5E4631');
+    R(c, w, h, 0.435, 0.16, 0.565, 0.172, '#5E4631');
+    c.strokeStyle = 'rgba(255,235,210,.28)'; c.lineWidth = Math.max(0.5, w * 0.006);
+    for (const [v0, v1, a0, b0, a1, b1] of [[0.66, 0.815, 0.31, 0.69, 0.2, 0.8], [0.17, 0.645, 0.46, 0.54, 0.31, 0.69]]) {
+      c.beginPath(); c.moveTo(a0 * w, v0 * h); c.lineTo(b1 * w, v1 * h); c.moveTo(b0 * w, v0 * h); c.lineTo(a1 * w, v1 * h); c.stroke();
+    }
+  }},
+  pyramid: {aspect: 1.66, shade: null, draw(c, w, h) {
+    fillP(c, w, h, [[0.492, 0.004], [0.508, 0.004], [0.6, 1], [0, 1]], '#E2C27F');
+    fillP(c, w, h, [[0.508, 0.004], [1, 1], [0.6, 1]], '#BD9655');
+    c.strokeStyle = 'rgba(120,90,40,.18)'; c.lineWidth = 1;
+    for (let v = 0.12; v < 1; v += 0.11) { c.beginPath(); const l = 0.5 - v * 0.5, r = 0.5 + v * 0.5; c.moveTo(l * w, v * h); c.lineTo((0.5 + v * 0.1) * w, v * h); c.lineTo(r * w, v * h); c.stroke(); }
+  }},
+  burj: {aspect: 0.14, shade: 0.5, draw(c, w, h) {
+    const half = [[0.5, 0], [0.49, 0.07], [0.47, 0.17], [0.45, 0.25], [0.45, 0.3], [0.41, 0.3], [0.41, 0.41], [0.35, 0.41],
+      [0.35, 0.53], [0.27, 0.53], [0.27, 0.66], [0.18, 0.66], [0.18, 0.8], [0.08, 0.8], [0.08, 0.93], [0, 0.93], [0, 1], [0.5, 1]];
+    fillP(c, w, h, symP(half), '#B4C5D3', EDGE);
+    c.fillStyle = 'rgba(60,90,120,.25)';
+    for (let v = 0.33; v < 1; v += 0.035) c.fillRect(0, v * h, w, Math.max(0.5, h * 0.004));
+  }},
+  bigben: {aspect: 0.17, shade: 0.5, draw(c, w, h) {
+    R(c, w, h, 0.18, 0.42, 0.82, 1, '#CFAE70');
+    R(c, w, h, 0.1, 0.96, 0.9, 1, '#B89758');
+    R(c, w, h, 0.12, 0.29, 0.88, 0.45, '#D8B97C');
+    R(c, w, h, 0.18, 0.22, 0.82, 0.29, '#CFAE70');
+    fillP(c, w, h, [[0.12, 0.225], [0.5, 0.03], [0.88, 0.225]], '#3E4A55');
+    R(c, w, h, 0.47, 0, 0.53, 0.05, '#C9A24A');
+    R(c, w, h, 0.12, 0.215, 0.88, 0.228, '#C9A24A');
+    const cx = 0.5 * w, cy = 0.37 * h, r = 0.3 * w;
+    c.beginPath(); c.arc(cx, cy, r, 0, Math.PI * 2); c.fillStyle = '#F6F1E3'; c.fill();
+    c.lineWidth = Math.max(0.6, r * 0.18); c.strokeStyle = '#C9A24A'; c.stroke();
+    c.strokeStyle = '#26303A'; c.lineWidth = Math.max(0.5, r * 0.12);
+    c.beginPath(); c.moveTo(cx, cy); c.lineTo(cx, cy - r * 0.7); c.moveTo(cx, cy); c.lineTo(cx + r * 0.45, cy + r * 0.15); c.stroke();
+    c.fillStyle = 'rgba(80,60,30,.28)';
+    for (let v = 0.5; v < 0.95; v += 0.09) { c.fillRect(0.3 * w, v * h, 0.1 * w, 0.05 * h); c.fillRect(0.6 * w, v * h, 0.1 * w, 0.05 * h); }
+  }},
+  empire: {aspect: 0.3, shade: 0.5, draw(c, w, h) {
+    const col = '#C9C3B4';
+    R(c, w, h, 0.02, 0.93, 0.98, 1, col);
+    R(c, w, h, 0.1, 0.86, 0.9, 0.93, col);
+    R(c, w, h, 0.22, 0.29, 0.78, 0.86, col);
+    R(c, w, h, 0.29, 0.21, 0.71, 0.29, col);
+    R(c, w, h, 0.36, 0.145, 0.64, 0.21, col);
+    fillP(c, w, h, [[0.42, 0.145], [0.45, 0.075], [0.55, 0.075], [0.58, 0.145]], '#D6D1C4');
+    R(c, w, h, 0.49, 0, 0.51, 0.075, '#8E9399');
+    c.fillStyle = 'rgba(60,70,80,.28)';
+    for (let u = 0.26; u < 0.76; u += 0.055) c.fillRect(u * w, 0.3 * h, Math.max(0.5, w * 0.018), 0.55 * h);
+  }},
+  pisa: {aspect: 0.336, shade: null, draw(c, w, h) {
+    const th = 3.97 * Math.PI / 180, H = h / (Math.cos(th) + 0.273 * Math.sin(th)), W = 0.273 * H;
+    c.save(); c.translate(0, h - W * Math.sin(th)); c.rotate(th);
+    c.fillStyle = '#EEEADF'; c.fillRect(0, -H * 0.9, W, H * 0.9);
+    c.fillRect(W * 0.14, -H, W * 0.72, H * 0.1);
+    c.strokeStyle = EDGE; c.lineWidth = 1; c.strokeRect(0, -H * 0.9, W, H * 0.9); c.strokeRect(W * 0.14, -H, W * 0.72, H * 0.1);
+    c.fillStyle = 'rgba(120,110,90,.45)';
+    for (let i = 0; i < 7; i++) {
+      const y = -H * (0.2 + i * 0.1);
+      c.fillRect(0, y, W, Math.max(0.6, H * 0.008));
+      if (i < 6) for (let k = 0; k < 5; k++) c.fillRect(W * (0.08 + k * 0.19), y + H * 0.025, W * 0.08, H * 0.06);
+    }
+    for (let k = 0; k < 3; k++) c.fillRect(W * (0.24 + k * 0.2), -H * 0.97, W * 0.1, H * 0.05);
+    c.globalCompositeOperation = 'source-atop'; c.fillStyle = 'rgba(20,30,40,.14)'; c.fillRect(W / 2, -H, W, H);
+    c.restore();
+  }},
+  spaceneedle: {aspect: 0.23, shade: 0.5, draw(c, w, h) {
+    const half = [[0.4, 0.15], [0.43, 0.3], [0.455, 0.45], [0.42, 0.6], [0.35, 0.76], [0.25, 0.92], [0.19, 1], [0.31, 1], [0.37, 0.9], [0.43, 0.79], [0.5, 0.73]];
+    fillP(c, w, h, symP(half), '#ECEAE4', EDGE);
+    R(c, w, h, 0.465, 0.15, 0.535, 1, '#DCD9D1');
+    c.beginPath(); c.ellipse(0.5 * w, 0.14 * h, 0.5 * w, 0.028 * h, 0, 0, Math.PI * 2); c.fillStyle = '#D9D6CE'; c.fill(); c.strokeStyle = EDGE; c.stroke();
+    R(c, w, h, 0.18, 0.137, 0.82, 0.16, '#6E7B86');
+    fillP(c, w, h, [[0.2, 0.113], [0.36, 0.085], [0.64, 0.085], [0.8, 0.113]], '#E58C2B');
+    R(c, w, h, 0.485, 0, 0.515, 0.09, '#9AA2A9');
+  }},
+  arch: {aspect: 1.0, shade: 0.5, draw(c, w, h) {
+    const A = 2.2, C = Math.cosh(A) - 1, N = 90, top = 0.016;
+    c.lineCap = 'round';
+    for (let i = 0; i < N; i++) {
+      const t0 = -1 + 2 * i / N, t1 = -1 + 2 * (i + 1) / N, tm = (t0 + t1) / 2;
+      const vm = (Math.cosh(A * tm) - 1) / C;
+      c.lineWidth = w * (0.028 + 0.058 * vm);
+      c.strokeStyle = '#C9CFD5';
+      c.beginPath();
+      c.moveTo((0.5 + t0 * 0.455) * w, (top + (Math.cosh(A * t0) - 1) / C * (1 - top)) * h);
+      c.lineTo((0.5 + t1 * 0.455) * w, (top + (Math.cosh(A * t1) - 1) / C * (1 - top)) * h);
+      c.stroke();
+    }
+  }},
+  washington: {aspect: 0.1, shade: 0.5, draw(c, w, h) {
+    fillP(c, w, h, [[0.19, 0.1], [0.81, 0.1], [1, 1], [0, 1]], '#EDE7D9', EDGE);
+    fillP(c, w, h, [[0.19, 0.1], [0.5, 0], [0.81, 0.1]], '#E4DDCC', EDGE);
+    P(c, w, h, [[0.13, 0.27], [0.87, 0.27], [1, 1], [0, 1]]); c.fillStyle = 'rgba(150,130,100,.12)'; c.fill();
+  }},
+  christ: {aspect: 0.74, shade: 0.5, draw(c, w, h) {
+    const s = '#DCDFD6';
+    R(c, w, h, 0.4, 0.79, 0.6, 1, '#C9CCC2');
+    R(c, w, h, 0.36, 0.95, 0.64, 1, '#BFC2B8');
+    fillP(c, w, h, [[0.43, 0.14], [0.57, 0.14], [0.62, 0.79], [0.38, 0.79]], s, EDGE);
+    fillP(c, w, h, [[0.005, 0.135], [0.5, 0.12], [0.995, 0.135], [0.995, 0.17], [0.57, 0.21], [0.43, 0.21], [0.005, 0.17]], s, EDGE);
+    R(c, w, h, 0.475, 0.09, 0.525, 0.13, s);
+    c.beginPath(); c.ellipse(0.5 * w, 0.05 * h, 0.042 * w, 0.05 * h, 0, 0, Math.PI * 2); c.fillStyle = s; c.fill(); c.strokeStyle = EDGE; c.stroke();
+    c.strokeStyle = 'rgba(90,100,90,.25)'; c.lineWidth = 1;
+    for (const u of [0.46, 0.5, 0.54]) { c.beginPath(); c.moveTo(u * w, 0.25 * h); c.lineTo((u + (u - 0.5) * 0.6) * w, 0.78 * h); c.stroke(); }
+  }},
+  taj: {aspect: 1.31, shade: 0.5, draw(c, w, h) {
+    const m = '#F3F0E8', d = '#D9D1C0';
+    R(c, w, h, 0, 0.92, 1, 1, '#E6DFD0');
+    for (const u of [0.03, 0.94]) { R(c, w, h, u, 0.49, u + 0.03, 0.92, m); fillP(c, w, h, [[u - 0.008, 0.49], [u + 0.015, 0.45], [u + 0.038, 0.49]], m, EDGE); }
+    fillP(c, w, h, [[0.2, 0.5], [0.8, 0.5], [0.8, 0.92], [0.2, 0.92]], m, EDGE);
+    fillP(c, w, h, [[0.42, 0.92], [0.42, 0.66], [0.5, 0.57], [0.58, 0.66], [0.58, 0.92]], d);
+    for (const u of [0.25, 0.68]) { fillP(c, w, h, [[u, 0.9], [u, 0.76], [u + 0.035, 0.72], [u + 0.07, 0.76], [u + 0.07, 0.9]], d); fillP(c, w, h, [[u, 0.7], [u, 0.6], [u + 0.035, 0.56], [u + 0.07, 0.6], [u + 0.07, 0.7]], d); }
+    R(c, w, h, 0.39, 0.42, 0.61, 0.5, m);
+    c.beginPath(); c.moveTo(0.37 * w, 0.43 * h);
+    c.bezierCurveTo(0.3 * w, 0.33 * h, 0.4 * w, 0.2 * h, 0.5 * w, 0.14 * h);
+    c.bezierCurveTo(0.6 * w, 0.2 * h, 0.7 * w, 0.33 * h, 0.63 * w, 0.43 * h);
+    c.closePath(); c.fillStyle = m; c.fill(); c.strokeStyle = EDGE; c.stroke();
+    R(c, w, h, 0.496, 0, 0.504, 0.15, '#C9A24A');
+    c.beginPath(); c.arc(0.5 * w, 0.07 * h, 0.008 * w, 0, Math.PI * 2); c.fillStyle = '#C9A24A'; c.fill();
+    for (const u of [0.26, 0.74]) {
+      R(c, w, h, u - 0.04, 0.44, u + 0.04, 0.5, m);
+      c.beginPath(); c.moveTo((u - 0.045) * w, 0.445 * h); c.quadraticCurveTo(u * w, 0.33 * h, (u + 0.045) * w, 0.445 * h); c.closePath(); c.fillStyle = m; c.fill(); c.strokeStyle = EDGE; c.stroke();
+    }
+  }},
+  colosseum: {aspect: 1.6, shade: null, draw(c, w, h) {
+    const t = '#D8BB8C', dk = '#7A5B3C';
+    fillP(c, w, h, [[0, 0], [0.6, 0], [0.64, 0.08], [0.7, 0.2], [0.76, 0.3], [0.84, 0.28], [0.92, 0.42], [1, 0.46], [1, 1], [0, 1]], t);
+    for (const [v0, v1, n] of [[0.2, 0.45, 8], [0.47, 0.72, 8], [0.74, 1, 8]]) {
+      for (let k = 0; k < n; k++) {
+        const u0 = 0.02 + k * 0.123, u1 = u0 + 0.075;
+        const clipTop = u1 > 0.76 && v0 < 0.45 ? 1 : 0;
+        if (clipTop) continue;
+        c.fillStyle = dk;
+        c.beginPath(); c.moveTo(u0 * w, v1 * h); c.lineTo(u0 * w, (v0 + 0.07) * h);
+        c.quadraticCurveTo((u0 + u1) / 2 * w, (v0 - 0.02) * h, u1 * w, (v0 + 0.07) * h); c.lineTo(u1 * w, v1 * h); c.closePath(); c.fill();
+      }
+      R(c, w, h, 0, v0 - 0.02, v0 < 0.3 ? 0.7 : 1, v0, '#B99B6B');
+    }
+    c.fillStyle = dk;
+    for (let k = 0; k < 6; k++) c.fillRect((0.05 + k * 0.1) * w, 0.08 * h, 0.03 * w, 0.05 * h);
+    c.globalCompositeOperation = 'source-atop'; c.fillStyle = 'rgba(20,30,40,.14)'; c.fillRect(0.62 * w, 0, w, h); c.globalCompositeOperation = 'source-over';
+  }},
+  stonehenge: {aspect: 1.25, shade: null, draw(c, w, h) {
+    const g = '#9E9D91', d = '#7F7E73';
+    fillP(c, w, h, [[0.03, 1], [0.02, 0.1], [0.06, 0.04], [0.09, 0.04], [0.09, 0], [0.13, 0], [0.13, 0.04], [0.2, 0.05], [0.23, 0.12], [0.24, 1]], g);
+    fillP(c, w, h, [[0.16, 0.05], [0.2, 0.05], [0.23, 0.12], [0.24, 1], [0.17, 1]], d);
+    fillP(c, w, h, [[0.38, 1], [0.39, 0.39], [0.53, 0.39], [0.53, 1]], g);
+    fillP(c, w, h, [[0.8, 1], [0.8, 0.39], [0.95, 0.39], [0.96, 1]], g);
+    fillP(c, w, h, [[0.36, 0.39], [0.35, 0.29], [0.98, 0.28], [0.99, 0.39]], d);
+    fillP(c, w, h, [[0.47, 1], [0.47, 0.4], [0.53, 0.39], [0.53, 1]], d);
+    fillP(c, w, h, [[0.9, 1], [0.9, 0.4], [0.95, 0.39], [0.96, 1]], d);
+  }},
+  skytree: {aspect: 0.14, shade: 0.5, draw(c, w, h) {
+    const m = '#EBF0F4';
+    fillP(c, w, h, symP([[0.44, 0.06], [0.43, 0.29], [0.38, 0.45], [0.33, 0.6], [0.22, 0.8], [0, 1], [0.5, 1]]), m, EDGE);
+    c.beginPath(); c.ellipse(0.5 * w, 0.445 * h, 0.36 * w, 0.02 * h, 0, 0, Math.PI * 2); c.fillStyle = '#D5DEE6'; c.fill(); c.strokeStyle = EDGE; c.stroke();
+    c.beginPath(); c.ellipse(0.5 * w, 0.29 * h, 0.2 * w, 0.013 * h, 0, 0, Math.PI * 2); c.fill(); c.stroke();
+    R(c, w, h, 0.49, 0, 0.51, 0.07, '#9AA7B3');
+    c.strokeStyle = 'rgba(80,110,140,.3)'; c.lineWidth = Math.max(0.5, w * 0.02);
+    for (let v = 0.5; v < 0.98; v += 0.08) { const a = 0.5 - (0.12 + (v - 0.45) * 0.75), b = 1 - a; c.beginPath(); c.moveTo(a * w, v * h); c.lineTo(b * w, (v + 0.08) * h); c.moveTo(b * w, v * h); c.lineTo(a * w, (v + 0.08) * h); c.stroke(); }
+  }},
+  cntower: {aspect: 0.13, shade: 0.5, draw(c, w, h) {
+    const m = '#D0CEC7';
+    fillP(c, w, h, symP([[0.47, 0.19], [0.44, 0.38], [0.42, 0.62], [0.36, 0.8], [0.22, 0.95], [0.18, 1], [0.5, 1]]), m, EDGE);
+    fillP(c, w, h, [[0.06, 0.355], [0.18, 0.33], [0.82, 0.33], [0.94, 0.355], [0.82, 0.39], [0.18, 0.39]], '#C6C3BB', EDGE);
+    R(c, w, h, 0.05, 0.35, 0.95, 0.365, '#5F6B74');
+    R(c, w, h, 0.36, 0.18, 0.64, 0.2, '#B9B6AE');
+    fillP(c, w, h, [[0.46, 0.18], [0.495, 0], [0.505, 0], [0.54, 0.18]], '#E4E2DC', EDGE);
+  }},
+  onewtc: {aspect: 0.12, shade: null, draw(c, w, h) {
+    R(c, w, h, 0.03, 0.895, 0.97, 1, '#A9B7C3');
+    fillP(c, w, h, [[0.03, 0.895], [0.3, 0.23], [0.5, 0.23]], '#9BBAD6');
+    fillP(c, w, h, [[0.03, 0.895], [0.5, 0.23], [0.97, 0.895]], '#7EA3C6');
+    fillP(c, w, h, [[0.97, 0.895], [0.5, 0.23], [0.7, 0.23]], '#5B82A8');
+    fillP(c, w, h, [[0.03, 0.895], [0.97, 0.895], [0.5, 0.36]], 'rgba(30,60,90,.18)');
+    R(c, w, h, 0.47, 0, 0.53, 0.23, '#C7CED4');
+    R(c, w, h, 0.4, 0.2, 0.6, 0.23, '#AEB7BF');
+  }},
+  goldengate: {aspect: 1.4, shade: null, draw(c, w, h) {
+    const o = '#C0392B', od = '#962C21';
+    c.strokeStyle = od; c.lineWidth = Math.max(0.7, w * 0.008);
+    for (const s of [-1, 1]) {
+      const tx = (0.5 + s * 0.055) * w;
+      c.beginPath(); c.moveTo(tx, 0.04 * h); c.quadraticCurveTo((0.5 + s * 0.3) * w, 0.75 * h, (0.5 + s * 0.5) * w, 0.62 * h); c.stroke();
+    }
+    c.lineWidth = Math.max(0.4, w * 0.0025);
+    for (let k = 1; k < 12; k++) for (const s of [-1, 1]) {
+      const t = k / 12, x = (1 - t) * (1 - t) * (0.5 + s * 0.055) + 2 * (1 - t) * t * (0.5 + s * 0.3) + t * t * (0.5 + s * 0.5);
+      const y = (1 - t) * (1 - t) * 0.04 + 2 * (1 - t) * t * 0.75 + t * t * 0.62;
+      c.beginPath(); c.moveTo(x * w, y * h); c.lineTo(x * w, 0.69 * h); c.stroke();
+    }
+    R(c, w, h, 0, 0.69, 1, 0.73, od);
+    fillP(c, w, h, [[0.43, 0.005], [0.455, 0.005], [0.46, 1], [0.425, 1]], o);
+    fillP(c, w, h, [[0.545, 0.005], [0.57, 0.005], [0.575, 1], [0.54, 1]], od);
+    for (const v of [0.0, 0.19, 0.39, 0.56]) R(c, w, h, 0.435, v, 0.565, v + 0.035, o);
+    R(c, w, h, 0.42, 0.97, 0.58, 1, '#7D7F80');
+  }},
+  saturnv: {aspect: 0.16, shade: 0.5, draw(c, w, h) {
+    const wh = '#F2F2EF', bk = '#23272B';
+    fillP(c, w, h, [[0, 1], [0.2, 0.84], [0.2, 1]], bk);
+    fillP(c, w, h, [[1, 1], [0.8, 0.84], [0.8, 1]], bk);
+    R(c, w, h, 0.18, 0.62, 0.82, 0.96, wh);
+    R(c, w, h, 0.18, 0.62, 0.5, 0.73, bk); R(c, w, h, 0.5, 0.73, 0.82, 0.86, bk);
+    fillP(c, w, h, [[0.22, 0.96], [0.3, 0.96], [0.28, 1], [0.2, 1]], '#555B60');
+    fillP(c, w, h, [[0.7, 0.96], [0.78, 0.96], [0.8, 1], [0.72, 1]], '#555B60');
+    R(c, w, h, 0.18, 0.38, 0.82, 0.62, wh); R(c, w, h, 0.18, 0.6, 0.82, 0.62, bk);
+    fillP(c, w, h, [[0.18, 0.38], [0.26, 0.34], [0.74, 0.34], [0.82, 0.38]], wh);
+    R(c, w, h, 0.26, 0.22, 0.74, 0.34, wh); R(c, w, h, 0.26, 0.21, 0.74, 0.225, bk);
+    fillP(c, w, h, [[0.26, 0.21], [0.36, 0.14], [0.64, 0.14], [0.74, 0.21]], wh);
+    fillP(c, w, h, [[0.36, 0.14], [0.45, 0.1], [0.55, 0.1], [0.64, 0.14]], '#B8BCC0');
+    fillP(c, w, h, [[0.47, 0.1], [0.49, 0], [0.51, 0], [0.53, 0.1]], '#C4442F');
+    c.strokeStyle = EDGE; c.lineWidth = 1; c.strokeRect(0.18 * w, 0.38 * h, 0.64 * w, 0.58 * h);
+  }},
+  opera: {aspect: 2.7, shade: null, draw(c, w, h) {
+    R(c, w, h, 0, 0.84, 1, 1, '#C9A47F');
+    const sails = [[0.16, 0.4, 0.38, 0.0], [0.05, 0.27, 0.25, 0.3], [0.3, 0.5, 0.47, 0.22], [0.6, 0.82, 0.8, 0.07], [0.5, 0.7, 0.68, 0.19], [0.74, 0.92, 0.9, 0.36]];
+    for (const [b0, b1, tu, tv] of sails) {
+      c.beginPath();
+      c.moveTo(b0 * w, 0.845 * h);
+      c.quadraticCurveTo((b0 + (tu - b0) * 0.25) * w, (tv + 0.12) * h, tu * w, tv * h);
+      c.quadraticCurveTo((tu + 0.02) * w, ((tv + 0.845) / 2) * h, b1 * w, 0.845 * h);
+      c.closePath(); c.fillStyle = '#F6F4EE'; c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke();
+      c.beginPath();
+      c.moveTo((b0 + (b1 - b0) * 0.55) * w, 0.845 * h);
+      c.quadraticCurveTo((tu - 0.01) * w, ((tv + 0.845) / 2 + 0.05) * h, tu * w, tv * h);
+      c.quadraticCurveTo((tu + 0.02) * w, ((tv + 0.845) / 2) * h, b1 * w, 0.845 * h);
+      c.closePath(); c.fillStyle = 'rgba(150,145,130,.28)'; c.fill();
+    }
+  }},
+  sphinx: {aspect: 3.65, shade: null, draw(c, w, h) {
+    const s = '#D7B881', d = '#B59562';
+    fillP(c, w, h, [[0.02, 1], [0.02, 0.84], [0.3, 0.8], [0.3, 1]], s);
+    fillP(c, w, h, [[0.16, 1], [0.18, 0.55], [0.3, 0.36], [0.55, 0.42], [0.8, 0.5], [0.88, 0.42], [0.95, 0.5], [0.99, 0.78], [0.99, 1]], s);
+    fillP(c, w, h, [[0.78, 1], [0.8, 0.62], [0.88, 0.5], [0.96, 0.56], [0.99, 0.8], [0.99, 1]], d);
+    c.beginPath(); c.moveTo(0.15 * w, 0.44 * h); c.lineTo(0.16 * w, 0.12 * h);
+    c.quadraticCurveTo(0.21 * w, -0.03 * h, 0.27 * w, 0.1 * h); c.lineTo(0.32 * w, 0.44 * h); c.closePath();
+    c.fillStyle = '#CDAE77'; c.fill();
+    c.strokeStyle = 'rgba(120,90,50,.3)'; c.lineWidth = Math.max(0.6, h * 0.012);
+    for (const v of [0.2, 0.28, 0.36]) { c.beginPath(); c.moveTo(0.22 * w, v * h); c.lineTo(0.31 * w, (v + 0.04) * h); c.stroke(); }
+    fillP(c, w, h, [[0.19, 0.1], [0.19, 0.4], [0.13, 0.4], [0.13, 0.3], [0.105, 0.27], [0.12, 0.22], [0.12, 0.12]], '#C2A06B');
+    R(c, w, h, 0.14, 0.18, 0.165, 0.2, '#8C6D43');
+    R(c, w, h, 0.02, 0.97, 0.3, 1, d);
+  }},
+  hollywood: {aspect: 7.6, shade: null, draw(c, w, h) {
+    const txt = 'HOLLYWOOD', fs = 200;
+    const t = document.createElement('canvas'), g = t.getContext('2d');
+    const font = `800 ${fs}px "Big Shoulders Display", Impact, "Arial Narrow", sans-serif`;
+    g.font = font;
+    const gap = fs * 0.14;
+    const ws = [...txt].map(ch => g.measureText(ch));
+    const total = ws.reduce((a, m) => a + m.width, 0) + gap * (txt.length - 1);
+    const asc = Math.max(...ws.map(m => m.actualBoundingBoxAscent));
+    t.width = Math.ceil(total + 8); t.height = Math.ceil(asc + 8);
+    g.font = font; g.textBaseline = 'alphabetic';
+    let x = 4;
+    [...txt].forEach((ch, i) => {
+      g.save(); g.translate(x + ws[i].width / 2, asc + 4); g.rotate(((i * 37) % 5 - 2) * 0.006);
+      g.fillStyle = '#FAFAF7'; g.fillText(ch, -ws[i].width / 2, 0);
+      g.lineWidth = 8; g.strokeStyle = '#56606B'; g.strokeText(ch, -ws[i].width / 2, 0);
+      g.restore();
+      x += ws[i].width + gap;
+    });
+    c.drawImage(t, 0, 0, w, h);
+  }},
+};
 
 /* ---------------- rules ---------------- */
 const ROUNDS = 10, SECONDS = 20, REVEAL_MS = 9000;
@@ -484,6 +776,7 @@ const fmtX = g => (g >= 10 ? g.toFixed(1) : g.toFixed(2)) + '×';
 function fmtLen(m) {
   if (m < 0.01) return `${+(m * 1000).toFixed(1)} mm`;
   if (m < 1) return `${+(m * 100).toFixed(m < 0.1 ? 1 : 0)} cm`;
+  if (m >= 1000) return `${Math.round(m).toLocaleString('en-US')} m`;
   return `${+m.toFixed(m < 10 ? 2 : 1)} m`;
 }
 const LS = {
@@ -503,20 +796,37 @@ mCanvas.width = mCanvas.height = MS + MP * 2;
 let mCache = {};
 function meas(o) {
   if (mCache[o.id]) return mCache[o.id];
+  if (ART[o.id]) return (mCache[o.id] = {ox: 0, oy: 0, w: ART[o.id].aspect, h: 1});
   const c = mCanvas.getContext('2d', {willReadFrequently: true});
   const N = mCanvas.width;
   c.clearRect(0, 0, N, N);
   c.font = `${MS}px ${EMOJI_FONT}`; c.textBaseline = 'top'; c.textAlign = 'left'; c.fillStyle = '#000';
   c.fillText(o.e, MP, MP);
   const d = c.getImageData(0, 0, N, N).data;
-  let x0 = N, y0 = N, x1 = -1, y1 = -1;
-  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
-    if (d[(y * N + x) * 4 + 3] > 24) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  // bounds of the drawing's main pieces, ignoring small sparkles and specks around it
+  const lab = new Int32Array(N * N).fill(-1), comps = [], stack = [];
+  for (let i = 0; i < N * N; i++) {
+    if (lab[i] !== -1 || d[i * 4 + 3] <= 40) continue;
+    const id = comps.length, b = {x0: N, y0: N, x1: -1, y1: -1, area: 0};
+    lab[i] = id; stack.push(i);
+    while (stack.length) {
+      const j = stack.pop(), x = j % N, y = (j - x) / N;
+      b.area++;
+      if (x < b.x0) b.x0 = x; if (x > b.x1) b.x1 = x; if (y < b.y0) b.y0 = y; if (y > b.y1) b.y1 = y;
+      if (x > 0 && lab[j - 1] === -1 && d[(j - 1) * 4 + 3] > 40) { lab[j - 1] = id; stack.push(j - 1); }
+      if (x < N - 1 && lab[j + 1] === -1 && d[(j + 1) * 4 + 3] > 40) { lab[j + 1] = id; stack.push(j + 1); }
+      if (y > 0 && lab[j - N] === -1 && d[(j - N) * 4 + 3] > 40) { lab[j - N] = id; stack.push(j - N); }
+      if (y < N - 1 && lab[j + N] === -1 && d[(j + N) * 4 + 3] > 40) { lab[j + N] = id; stack.push(j + N); }
+    }
+    comps.push(b);
   }
+  const big = comps.reduce((a, b) => Math.max(a, b.area), 0);
+  let x0 = N, y0 = N, x1 = -1, y1 = -1;
+  for (const b of comps) if (b.area >= big * 0.04) { x0 = Math.min(x0, b.x0); y0 = Math.min(y0, b.y0); x1 = Math.max(x1, b.x1); y1 = Math.max(y1, b.y1); }
   const m = x1 < 0 ? {ox: 0, oy: 0, w: 1, h: 1} : {ox: (x0 - MP) / MS, oy: (y0 - MP) / MS, w: (x1 - x0 + 1) / MS, h: (y1 - y0 + 1) / MS};
   return (mCache[o.id] = m);
 }
-const emojiText = OBJ.map(o => o.e).join('');
+const emojiText = OBJ.map(o => o.e || '').join('');
 const fontsReady = Promise.race([
   Promise.all([
     document.fonts.load(`64px "Noto Color Emoji"`, emojiText),
@@ -533,7 +843,26 @@ function tok() {
   return {ink: g('--ink'), muted: g('--muted'), line: g('--line'), stage: g('--stage'), grid: g('--stage-grid'),
           measure: g('--measure'), green: g('--green'), red: g('--red')};
 }
+const artCanvas = document.createElement('canvas');
+function drawArt(c, o, hPx, left, ground, alpha) {
+  const a = ART[o.id], h = hPx, w = hPx * a.aspect;
+  if (!(h > 0.5)) return;
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  artCanvas.width = Math.max(1, Math.ceil(w * dpr));
+  artCanvas.height = Math.max(1, Math.ceil(h * dpr));
+  const g = artCanvas.getContext('2d');
+  g.setTransform(artCanvas.width / w, 0, 0, artCanvas.height / h, 0, 0);
+  a.draw(g, w, h);
+  if (a.shade != null) {
+    g.globalCompositeOperation = 'source-atop';
+    g.fillStyle = 'rgba(20,30,40,.16)';
+    g.fillRect(w * a.shade, 0, w, h);
+    g.globalCompositeOperation = 'source-over';
+  }
+  c.save(); c.globalAlpha = alpha; c.drawImage(artCanvas, left, ground - h, w, h); c.restore();
+}
 function drawEmoji(c, o, m, axisPx, left, ground, alpha) {
+  if (ART[o.id]) { drawArt(c, o, axisPx, left, ground, alpha); return; }
   const fs = axisPx / (o.ax === 'w' ? m.w : m.h);
   if (!(fs > 0.2)) return;
   c.save();
@@ -608,8 +937,8 @@ function drawStage(cv, s) {
   const small = W < 420;
   const f1 = `600 ${small ? 12 : 14}px "Instrument Sans", system-ui, sans-serif`;
   const f2 = `500 ${small ? 11 : 12}px "IBM Plex Mono", ui-monospace, monospace`;
-  label(c, 14, 24, 'left', [[cap(s.ref.noun), f1, T.ink], ...s.refLines.map(t => [t[0], f2, T[t[1]]])]);
-  label(c, W - 14, 24, 'right', [[cap(s.tgt.noun), f1, T.ink], ...s.tgtLines.map(t => [t[0], f2, T[t[1]]])]);
+  label(c, 14, 24, 'left', [[s.ref.label, f1, T.ink], ...s.refLines.map(t => [t[0], f2, T[t[1]]])]);
+  label(c, W - 14, 24, 'right', [[s.tgt.label, f1, T.ink], ...s.tgtLines.map(t => [t[0], f2, T[t[1]]])]);
 }
 
 /* ---------------- in-memory store (solo, host copy, guest mirror) ---------------- */
@@ -1026,17 +1355,17 @@ function renderLobby() {
 function stageState() {
   const [ref, tgt] = pairOf(room.round);
   const r = tgt.s / ref.s;
-  const refLines = [[`${fmtLen(ref.s)} ${ADJ[ref.d]}`, 'muted']];
+  const refLines = [[`${fmtLen(ref.s)} tall`, 'muted']];
   if (room.phase === 'reveal') {
     const a = local.anim;
     let g = r;
     if (a && !REDUCED) { const t = Math.min(1, (performance.now() - a.t0) / 900); const e = 1 - Math.pow(1 - t, 3); g = a.from * Math.pow(a.to / a.from, e); }
     const guess = local.touched ? local.g : null;
-    const tgtLines = [[`${fmtLen(tgt.s)} ${ADJ[tgt.d]}`, 'green']];
+    const tgtLines = [[`${fmtLen(tgt.s)} tall`, 'green']];
     if (guess != null) tgtLines.push([`you: ${fmtLen(guess * ref.s)}`, 'red']);
     return {ref, tgt, g, fit: Math.max(r, guess ?? r, a ? a.from : r), ghost: guess, refLines, tgtLines, tgtColor: 'green'};
   }
-  return {ref, tgt, g: local.g, fit: local.g, ghost: null, refLines, tgtLines: [[`? ${ADJ[tgt.d]}`, 'measure']], tgtColor: 'measure'};
+  return {ref, tgt, g: local.g, fit: local.g, ghost: null, refLines, tgtLines: [['? tall', 'measure']], tgtColor: 'measure'};
 }
 
 function renderRound() {
@@ -1048,14 +1377,14 @@ function renderRound() {
   $('#rb-of').textContent = '/' + room.rounds.length;
   const cur = scoreRec(mine(), room.round);
   $('#rb-score').textContent = totalOf(mine()) - (reveal || !cur ? 0 : cur.p || 0);
-  $('#prompt').innerHTML = `${VERB[tgt.d]} <em>${esc(tgt.a)}</em> next to <em>${esc(ref.a)}</em>?`;
+  $('#prompt').innerHTML = `How tall is <em>${esc(tgt.a.split(',')[0])}</em> next to <em>${esc(ref.a.split(',')[0])}</em>?`;
 
   $('#play-ui').hidden = reveal;
   $('#reveal').hidden = !reveal;
   $('#stage').classList.toggle('still', reveal || local.locked);
   for (const id of ['#size', '#btn-minus', '#btn-plus', '#btn-lock']) $(id).disabled = local.locked;
   $('#btn-lock').textContent = local.locked ? 'Locked' : 'Lock in';
-  $('#readout').innerHTML = `${fmtX(local.g)}<small>the ${esc(ref.noun)}'s ${ref.d}</small>`;
+  $('#readout').innerHTML = `${fmtX(local.g)}<small>the height of ${esc(ref.a)}</small>`;
   $('#hint').hidden = local.locked;
 
   const w = $('#waiting');
@@ -1076,7 +1405,7 @@ function renderRound() {
     $('#rv-pts').style.color = p >= 65 ? 'var(--green)' : p > 0 ? 'var(--ink)' : 'var(--red)';
     $('#rv-verdict').textContent = verdict(p, g);
     $('#rv-off').textContent = g == null ? "You didn't move the slider this round." : `Your guess was ${offBy(g, r)} (${fmtLen(g * ref.s)} vs ${fmtLen(tgt.s)}).`;
-    $('#rv-fact').innerHTML = `<strong>${esc(cap(tgt.a))}</strong> is about ${fmtLen(tgt.s)} ${ADJ[tgt.d] === 'wingspan' ? 'wing to wing' : ADJ[tgt.d]}, or ${fmtX(r)} the ${ref.d} of ${esc(ref.a)} (${fmtLen(ref.s)}).`;
+    $('#rv-fact').innerHTML = `<strong>${esc(cap(tgt.a))}</strong>${tgt.a.includes(',') ? ',' : ''} is ${fmtLen(tgt.s)} tall${tgt.note ? ` (${esc(tgt.note)})` : ''}, or ${fmtX(r)} the height of ${esc(ref.a)} (${fmtLen(ref.s)}${ref.note ? `, ${esc(ref.note)}` : ''}).`;
     const rows = players.map(pl => ({pl, rec: scoreRec(pl, room.round)}))
       .sort((a, b) => (b.rec?.p ?? -1) - (a.rec?.p ?? -1));
     $('#rv-list').innerHTML = rows.map(({pl, rec}) => `
@@ -1119,12 +1448,12 @@ function renderFinal() {
 }
 
 /* ---------------- demo on home ---------------- */
-const DEMO = {ref: BY.person, tgt: BY.giraffe};
+const DEMO = {ref: BY.colosseum, tgt: BY.taj};
 function drawDemo(now) {
   const r = DEMO.tgt.s / DEMO.ref.s;
-  const g = REDUCED ? 2.4 : Math.exp(Math.log(r) + Math.sin(now / 1400) * 0.55);
+  const g = REDUCED ? r * 0.75 : Math.exp(Math.log(r) + Math.sin(now / 1400) * 0.55);
   drawStage($('#demo'), {ref: DEMO.ref, tgt: DEMO.tgt, g, fit: g, ghost: null,
-    refLines: [[`${fmtLen(DEMO.ref.s)} tall`, 'muted']], tgtLines: [[`${fmtX(g)} the person`, 'measure']], tgtColor: 'measure'});
+    refLines: [[`${fmtLen(DEMO.ref.s)} tall`, 'muted']], tgtLines: [[`${fmtX(g)} the Colosseum`, 'measure']], tgtColor: 'measure'});
 }
 
 function redrawAll() {
