@@ -246,7 +246,7 @@ input[type=range]:disabled{opacity:.5;cursor:not-allowed}
     <div class="hero">
       <h1 class="title">How <span>Big?</span></h1>
       <div class="tape-strip" aria-hidden="true" id="tape-strip"></div>
-      <p class="tagline">Two things, side by side. Stretch the second one until their heights are to scale. Closest guess wins.</p>
+      <p class="tagline">Two things, side by side. Stretch the one on the right until their heights are to scale. Closest guess wins.</p>
     </div>
 
     <div class="home-grid">
@@ -273,8 +273,8 @@ input[type=range]:disabled{opacity:.5;cursor:not-allowed}
     </div>
 
     <div class="rules">
-      <div class="rule"><b>1. Read the reference</b><p>The first object is shown with its real height, like a compact car at 1.44 m tall.</p></div>
-      <div class="rule"><b>2. Resize the second</b><p>Drag the slider or the picture to make it taller or shorter. Use ×10 and ÷10 for big jumps.</p></div>
+      <div class="rule"><b>1. Read the reference</b><p>The object on the left is shown at its real height, like a compact car at 1.44 m tall.</p></div>
+      <div class="rule"><b>2. Resize the right one</b><p>Drag the slider or the picture to make it taller or shorter. Use ×10 and ÷10 for big jumps.</p></div>
       <div class="rule"><b>3. Lock in by 20 s</b><p>Ten rounds per game. Everyone in the room gets the same pairs.</p></div>
     </div>
 
@@ -283,7 +283,7 @@ input[type=range]:disabled{opacity:.5;cursor:not-allowed}
       <div class="scale-row">
         <div class="scale-bar" aria-hidden="true"></div>
         <div class="scale-lbl"><span><b>0</b> at ½ size</span><span><b>68</b> at 0.8×</span><span><b>100</b> within 3%</span><span><b>68</b> at 1.25×</span><span><b>0</b> at 2×</span></div>
-        <p class="note">Scores follow how many times too big or too small you were, so 2× too big costs the same as ½ size. When the two heights are far apart the scale widens: if one is 1,000× taller than the other, you keep scoring until you're 8× off. Not touching the slider scores 0.</p>
+        <p class="note">Scores follow how many times too big or too small you were, so 2× too big costs the same as ½ size. When the two heights are far apart the scale widens: if one is 20× taller than the other, you keep scoring until you're about 2.5× off. Not touching the slider scores 0.</p>
       </div>
     </div>
   </section>
@@ -1584,9 +1584,509 @@ Object.assign(ART, {
     extra(c, w, h) { R(c, w, h, 0, 0.82, 1, 1, 'rgba(90,30,10,.25)'); }}),
 });
 
+
+/* ---------------- round 3: objects that fill the thin size ranges (heights checked Sept 2026) ---------------- */
+const RAW3 = [
+  ['marble',null,'a glass marble',0.016,'common size','Marble'],
+  ['puck',null,'a hockey puck',0.0254,'lying flat',''],
+  ['aaa',null,'an AAA battery',0.0445,'','AAA battery'],
+  ['ninevolt',null,'a 9-volt battery',0.0485,'','9-volt battery'],
+  ['golftee',null,'a golf tee',0.054,'standard length',''],
+  ['cube',null,'a 3×3 puzzle cube',0.057,'standard size','Puzzle cube'],
+  ['dbattery',null,'a D battery',0.0615,'','D battery'],
+  ['card','🃏','a playing card',0.089,'standing upright, poker size','Playing card'],
+  ['cd','💿','a CD',0.12,'standing on its edge','CD'],
+  ['ostrichegg',null,'an ostrich egg',0.15,'standing on end',''],
+  ['paperback',null,'a paperback book',0.175,'mass-market size, standing up','Paperback book'],
+  ['bowlingball',null,'a bowling ball',0.218,'',''],
+  ['cat','🐈','a house cat',0.24,'at the shoulder','House cat'],
+  ['racket',null,'a tennis racket',0.686,'standing on end, standard length','Tennis racket'],
+  ['desk',null,'an office desk',0.74,'standard height','Desk'],
+  ['washer',null,'a washing machine',0.85,'typical front-loader','Washing machine'],
+  ['bat',null,'a baseball bat',0.864,'34-inch bat, standing on end','Baseball bat'],
+  ['counter',null,'a kitchen counter',0.914,'standard height','Kitchen counter'],
+  ['hurdle',null,'a 110 m hurdle',1.067,'men\'s race height','Hurdle'],
+  ['tennisnet',null,'a tennis net',1.07,'at the posts','Tennis net'],
+  ['pony','🐎','a Shetland pony',1.07,'breed maximum, at the withers','Shetland pony'],
+  ['beam',null,'a gymnastics balance beam',1.25,'','Balance beam'],
+  ['vending',null,'a vending machine',1.83,'typical height','Vending machine'],
+  ['rover',null,'the Perseverance Mars rover',2.2,'','Perseverance rover'],
+  ['abrams',null,'an M1 Abrams tank',2.44,'','M1 Abrams tank'],
+  ['wrightflyer',null,'the 1903 Wright Flyer',2.74,'','Wright Flyer'],
+  ['clockface',null,'one of Big Ben\'s clock faces',6.9,'diameter','Big Ben clock face'],
+  ['apollolm',null,'an Apollo lunar module',7.04,'','Apollo lunar module'],
+  ['minetruck',null,'a Caterpillar 797F mining truck',7.44,'bed down','Mining truck'],
+  ['greatwall',null,'the Great Wall of China',7.8,'near Badaling','Great Wall'],
+  ['paro','🗿','Paro, the tallest moai ever raised',10,'about 10 m','Paro (moai)'],
+  ['delicatearch',null,'Delicate Arch in Utah',16,'','Delicate Arch'],
+  ['orbiter',null,'a Space Shuttle orbiter',17.86,'on its landing gear','Shuttle orbiter'],
+  ['an225',null,'the An-225 Mriya plane',18.1,'the largest plane ever built','An-225 Mriya'],
+  ['luxor',null,'the Luxor Obelisk in Paris',23,'without its pedestal','Luxor Obelisk'],
+  ['gatewayindia',null,'the Gateway of India',26,'','Gateway of India'],
+  ['lincoln','🏛️','the Lincoln Memorial',30,'','Lincoln Memorial'],
+  ['belem',null,'Belém Tower in Lisbon',30,'','Belém Tower'],
+  ['gullfoss',null,'Gullfoss waterfall',32,'total drop','Gullfoss'],
+  ['hindenburg',null,'the Hindenburg airship',41,'its diameter','Hindenburg'],
+  ['waxpalm','🌴','a Quindío wax palm',45,'typical full height','Wax palm'],
+  ['seljalandsfoss',null,'Seljalandsfoss waterfall',60,'single drop','Seljalandsfoss'],
+  ['spasskaya',null,'the Kremlin\'s Spasskaya Tower',71,'with its star','Spasskaya Tower'],
+  ['iguazu',null,'Iguazu Falls',82,'tallest drop','Iguazu Falls'],
+  ['brooklyn',null,'the Brooklyn Bridge',85,'its towers, above the water','Brooklyn Bridge'],
+  ['capitol',null,'the US Capitol',88,'','US Capitol'],
+  ['bagger',null,'Bagger 288, a giant excavator',96,'','Bagger 288'],
+  ['menara','🌳','Menara, the tallest tropical tree',97.6,'a yellow meranti','Menara (tree)'],
+  ['dover',null,'the White Cliffs of Dover',110,'at their highest','White Cliffs of Dover'],
+  ['wembley',null,'the Wembley Stadium arch',134,'','Wembley arch'],
+  ['multnomah',null,'Multnomah Falls',189,'total drop','Multnomah Falls'],
+  ['moher',null,'the Cliffs of Moher',214,'at their highest','Cliffs of Moher'],
+  ['kaieteur',null,'Kaieteur Falls',226,'single drop','Kaieteur Falls'],
+  ['americas',null,'the Tower of the Americas',229,'','Tower of the Americas'],
+  ['woolworth',null,'the Woolworth Building',241,'','Woolworth Building'],
+  ['millau',null,'the Millau Viaduct',343,'to the top of its tallest mast','Millau Viaduct'],
+  ['bankofchina',null,'the Bank of China Tower',367.4,'','Bank of China Tower'],
+  ['kltower',null,'the Kuala Lumpur Tower',421,'','KL Tower'],
+  ['park432',null,'432 Park Avenue',425.5,'','432 Park Avenue'],
+  ['orientalpearl',null,'the Oriental Pearl Tower',468,'','Oriental Pearl Tower'],
+  ['shiprock',null,'Shiprock',482,'above the surrounding plain','Shiprock'],
+  ['preikestolen',null,'Preikestolen (Pulpit Rock)',604,'above the fjord','Preikestolen'],
+  ['scafell',null,'Scafell Pike',978,'above sea level','Scafell Pike'],
+  ['tugela',null,'Tugela Falls',983,'total drop','Tugela Falls'],
+  ['snowdon',null,'Snowdon',1085,'above sea level','Snowdon'],
+  ['trollwall',null,'the Troll Wall',1100,'base to summit','Troll Wall'],
+  ['diablo',null,'Mount Diablo',1173,'above sea level','Mount Diablo'],
+  ['thor',null,'Mount Thor\'s cliff',1200,'the greatest vertical drop on Earth','Mount Thor'],
+  ['mansfield',null,'Mount Mansfield',1339,'above sea level','Mount Mansfield'],
+  ['grandcanyon',null,'the Grand Canyon\'s walls',1857,'rim to river, at the deepest point','Grand Canyon'],
+  ['mitchell',null,'Mount Mitchell',2037,'above sea level','Mount Mitchell'],
+  ['olympuswa',null,'Mount Olympus in Washington',2432,'above sea level','Mount Olympus (WA)'],
+  ['hood',null,'Mount Hood',3429,'above sea level','Mount Hood'],
+  ['teide',null,'Mount Teide',3715,'above sea level','Mount Teide'],
+  ['aoraki',null,'Aoraki / Mount Cook',3724,'above sea level','Aoraki / Mount Cook'],
+  ['maunaloa',null,'Mauna Loa',4169,'above sea level','Mauna Loa'],
+  ['pikes',null,'Pikes Peak',4302,'above sea level','Pikes Peak'],
+  ['shasta',null,'Mount Shasta',4322,'above sea level','Mount Shasta'],
+  ['vinson',null,'Mount Vinson',4892,'above sea level','Mount Vinson'],
+  ['ararat',null,'Mount Ararat',5137,'above sea level','Mount Ararat'],
+  ['logan',null,'Mount Logan',5959,'above sea level','Mount Logan'],
+  ['lhotse',null,'Lhotse',8516,'above sea level','Lhotse'],
+  ['kangchenjunga',null,'Kangchenjunga',8586,'above sea level','Kangchenjunga'],
+];
+for (const [id, e, a, s, note, label] of RAW3) {
+  const noun = a.replace(/^(an?|the) /, '');
+  const o = {id, e, a, s, note, noun, label: label || cap0(noun)};
+  OBJ.push(o); BY[id] = o;
+}
+
+function batteryArt(aspect, body, band) { return {aspect, shade: 0.55, draw(c, w, h) {
+  R(c, w, h, 0.34, 0, 0.66, 0.05, '#B9BEC3');
+  R(c, w, h, 0, 0.04, 1, 1, body);
+  R(c, w, h, 0, 0.04, 1, 0.1, '#C7CDD3'); R(c, w, h, 0, 0.95, 1, 1, '#9AA1A8');
+  R(c, w, h, 0, 0.14, 1, 0.34, band);
+}}; }
+function towerArt(t) { return {aspect: t.aspect, shade: 0.5, draw(c, w, h) {
+  fillP(c, w, h, [[0.5 - t.base, 1], [0.5 - t.top, t.shaftTop], [0.5 + t.top, t.shaftTop], [0.5 + t.base, 1]], t.color || '#D6D4CD', EDGE);
+  if (t.legs) for (const s of [-1, 1]) L(c, w, h, [[0.5 + s * 0.46, 1], [0.5 + s * t.top, t.legs]], t.color || '#D6D4CD', Math.max(1, w * 0.06));
+  for (const p of t.pods) {
+    if (p.ball) { E(c, w, h, 0.5, p.v, p.r, p.r * t.aspect, p.color || '#C9577A', EDGE); continue; }
+    fillP(c, w, h, [[0.5 - p.r, p.v], [0.5 - p.r * 0.8, p.v - p.h / 2], [0.5 + p.r * 0.8, p.v - p.h / 2], [0.5 + p.r, p.v], [0.5 + p.r * 0.8, p.v + p.h / 2], [0.5 - p.r * 0.8, p.v + p.h / 2]], p.color || '#C4C2BB', EDGE);
+    R(c, w, h, 0.5 - p.r * 0.9, p.v - p.h * 0.1, 0.5 + p.r * 0.9, p.v + p.h * 0.1, '#5F6B74');
+  }
+  fillP(c, w, h, [[0.5 - t.top * 0.8, t.shaftTop], [0.495, 0], [0.505, 0], [0.5 + t.top * 0.8, t.shaftTop]], t.mast || '#E4E2DC', EDGE);
+}}; }
+function cliffArt(f) { return {aspect: f.aspect, shade: null, draw(c, w, h) {
+  const pts = [[0, 1], ...f.edge, [1, 1]];
+  fillP(c, w, h, pts, f.rock);
+  c.save(); P(c, w, h, pts); c.clip();
+  if (f.top) { c.beginPath(); c.moveTo(0, 0); for (const [u, v] of f.edge) c.lineTo(u * w, (v + 0.06) * h); c.lineTo(w, 0); c.closePath(); c.fillStyle = f.top; c.fill(); }
+  c.fillStyle = f.streak || 'rgba(0,0,0,.12)';
+  for (let u = 0.03; u < 1; u += 0.045) c.fillRect(u * w, 0.1 * h, Math.max(0.5, w * 0.006), 0.8 * h);
+  c.restore();
+  if (f.sea) R(c, w, h, 0, 0.93, 1, 1, '#4F8DB8');
+}}; }
+
+Object.assign(ART, {
+  marble: ballArt('#58A6C9', (c, w, h) => { c.strokeStyle = '#E9B23B'; c.lineWidth = Math.max(0.8, w * 0.08); c.beginPath(); c.moveTo(0.2 * w, 0.7 * h); c.bezierCurveTo(0.4 * w, 0.3 * h, 0.6 * w, 0.8 * h, 0.8 * w, 0.3 * h); c.stroke(); E(c, w, h, 0.35, 0.3, 0.1, 0.07, 'rgba(255,255,255,.7)'); }),
+  puck: {aspect: 3, shade: null, draw(c, w, h) {
+    E(c, w, h, 0.5, 0.72, 0.5, 0.28, '#15171A'); R(c, w, h, 0, 0.28, 1, 0.72, '#15171A');
+    E(c, w, h, 0.5, 0.28, 0.5, 0.28, '#2A2E33');
+    c.fillStyle = 'rgba(255,255,255,.15)'; for (let u = 0.04; u < 1; u += 0.04) c.fillRect(u * w, 0.45 * h, Math.max(0.5, w * 0.008), 0.35 * h);
+  }},
+  aaa: batteryArt(0.24, '#2B2E33', '#D9A441'),
+  ninevolt: {aspect: 0.55, shade: 0.55, draw(c, w, h) {
+    for (const [u, r] of [[0.28, 0.1], [0.7, 0.1]]) { R(c, w, h, u - r, 0, u + r, 0.1, '#B9BEC3'); }
+    R(c, w, h, 0, 0.08, 1, 1, '#2B2E33');
+    R(c, w, h, 0, 0.35, 1, 0.65, '#C8352B');
+  }},
+  golftee: {aspect: 0.2, shade: 0.5, draw(c, w, h) {
+    fillP(c, w, h, [[0, 0], [1, 0], [0.62, 0.14], [0.56, 0.9], [0.5, 1], [0.44, 0.9], [0.38, 0.14]], '#E9C46A', EDGE);
+  }},
+  cube: {aspect: 1, shade: null, draw(c, w, h) {
+    R(c, w, h, 0, 0, 1, 1, '#1C1E21');
+    const cols = ['#D93A2B', '#F2F2EF', '#2F6DB5', '#F2C230', '#23905A', '#F07A1E', '#F2F2EF', '#2F6DB5', '#D93A2B'];
+    for (let i = 0; i < 9; i++) { c.beginPath(); c.roundRect((0.04 + (i % 3) * 0.32) * w, (0.04 + Math.floor(i / 3) * 0.32) * h, 0.28 * w, 0.28 * h, 0.04 * w); c.fillStyle = cols[i]; c.fill(); }
+  }},
+  dbattery: batteryArt(0.55, '#2B2E33', '#23905A'),
+  ostrichegg: {aspect: 0.87, shade: null, draw(c, w, h) {
+    c.beginPath(); c.moveTo(0.5 * w, 0); c.bezierCurveTo(0.95 * w, 0, 1.02 * w, 0.62 * h, 0.9 * w, 0.8 * h); c.bezierCurveTo(0.8 * w, 0.98 * h, 0.2 * w, 0.98 * h, 0.1 * w, 0.8 * h); c.bezierCurveTo(-0.02 * w, 0.62 * h, 0.05 * w, 0, 0.5 * w, 0); c.closePath();
+    c.fillStyle = '#F1E8D2'; c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke();
+    E(c, w, h, 0.36, 0.3, 0.1, 0.12, 'rgba(255,255,255,.6)');
+    c.fillStyle = 'rgba(150,120,80,.25)'; for (let i = 0; i < 18; i++) { c.beginPath(); c.arc((0.25 + (i * 37 % 50) / 100) * w, (0.25 + (i * 53 % 60) / 100) * h, Math.max(0.4, w * 0.008), 0, 7); c.fill(); }
+  }},
+  paperback: {aspect: 0.62, shade: null, draw(c, w, h) {
+    R(c, w, h, 0, 0, 1, 1, '#2F6DB5');
+    R(c, w, h, 0, 0, 0.1, 1, '#24558E');
+    R(c, w, h, 0.2, 0.12, 0.9, 0.42, '#F2C230');
+    for (const v of [0.55, 0.62]) R(c, w, h, 0.2, v, 0.85, v + 0.03, 'rgba(255,255,255,.8)');
+  }},
+  bowlingball: ballArt('#3A2D6B', (c, w, h) => { for (const [u, v] of [[0.38, 0.3], [0.52, 0.26], [0.46, 0.4]]) E(c, w, h, u, v, 0.045, 0.045, '#15121F'); E(c, w, h, 0.3, 0.25, 0.08, 0.05, 'rgba(255,255,255,.35)'); }),
+  racket: {aspect: 0.4, shade: null, draw(c, w, h) {
+    c.lineWidth = Math.max(1, w * 0.06); c.strokeStyle = '#2E5C9A';
+    c.beginPath(); c.ellipse(0.5 * w, 0.27 * h, 0.46 * w, 0.26 * h, 0, 0, Math.PI * 2); c.stroke();
+    c.save(); c.beginPath(); c.ellipse(0.5 * w, 0.27 * h, 0.43 * w, 0.24 * h, 0, 0, Math.PI * 2); c.clip();
+    c.strokeStyle = 'rgba(160,165,170,.8)'; c.lineWidth = Math.max(0.4, w * 0.008);
+    for (let u = 0.08; u < 0.95; u += 0.07) L(c, w, h, [[u, 0], [u, 0.55]], 'rgba(160,165,170,.8)', Math.max(0.4, w * 0.008));
+    for (let v = 0.04; v < 0.52; v += 0.04) L(c, w, h, [[0, v], [1, v]], 'rgba(160,165,170,.8)', Math.max(0.4, w * 0.008));
+    c.restore();
+    fillP(c, w, h, [[0.4, 0.52], [0.5, 0.62], [0.6, 0.52], [0.54, 0.64], [0.46, 0.64]], '#2E5C9A');
+    R(c, w, h, 0.44, 0.62, 0.56, 1, '#1E2126');
+  }},
+  bat: {aspect: 0.08, shade: 0.5, draw(c, w, h) {
+    c.beginPath(); c.moveTo(0.1 * w, 0.02 * h); c.quadraticCurveTo(0.5 * w, -0.01 * h, 0.9 * w, 0.02 * h); c.lineTo(0.9 * w, 0.35 * h); c.lineTo(0.62 * w, 0.8 * h); c.lineTo(0.62 * w, 0.95 * h); c.lineTo(0.9 * w, 0.97 * h); c.lineTo(0.9 * w, h); c.lineTo(0.1 * w, h); c.lineTo(0.1 * w, 0.97 * h); c.lineTo(0.38 * w, 0.95 * h); c.lineTo(0.38 * w, 0.8 * h); c.lineTo(0.1 * w, 0.35 * h); c.closePath();
+    c.fillStyle = '#D8B27A'; c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke();
+    R(c, w, h, 0.38, 0.8, 0.62, 0.95, '#2B2E33');
+  }},
+  desk: {aspect: 1.9, shade: null, draw(c, w, h) {
+    R(c, w, h, 0, 0, 1, 0.07, '#9A6B45');
+    R(c, w, h, 0.03, 0.07, 0.08, 1, '#7E5738'); R(c, w, h, 0.92, 0.07, 0.97, 1, '#7E5738');
+    R(c, w, h, 0.62, 0.07, 0.9, 0.7, '#8A6040');
+    for (const v of [0.26, 0.48]) R(c, w, h, 0.62, v, 0.9, v + 0.01, '#6B4A31');
+    for (const v of [0.16, 0.38, 0.6]) R(c, w, h, 0.73, v, 0.79, v + 0.02, '#D8C3A0');
+  }},
+  washer: {aspect: 0.7, shade: 0.55, draw(c, w, h) {
+    c.beginPath(); c.roundRect(0, 0, w, h, 0.04 * w); c.fillStyle = '#F1F2F3'; c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke();
+    R(c, w, h, 0, 0.15, 1, 0.16, 'rgba(0,0,0,.15)');
+    R(c, w, h, 0.08, 0.05, 0.4, 0.1, '#9AA1A8');
+    E(c, w, h, 0.78, 0.075, 0.06, 0.04, '#6B737C');
+    E(c, w, h, 0.5, 0.55, 0.36, 0.26, '#9AA1A8');
+    E(c, w, h, 0.5, 0.55, 0.3, 0.21, '#3E6E8E');
+    E(c, w, h, 0.42, 0.48, 0.08, 0.05, 'rgba(255,255,255,.5)');
+  }},
+  counter: {aspect: 1.6, shade: null, draw(c, w, h) {
+    R(c, w, h, 0, 0, 1, 0.06, '#D9D6CF');
+    R(c, w, h, 0.02, 0.06, 0.98, 0.93, '#6F8B98');
+    R(c, w, h, 0.02, 0.93, 0.98, 1, '#34424A');
+    for (const u of [0.02, 0.34, 0.66]) { c.strokeStyle = 'rgba(0,0,0,.25)'; c.lineWidth = 1; c.strokeRect(u * w + 2, 0.1 * h, 0.32 * w - 4, 0.8 * h); R(c, w, h, u + 0.14, 0.18, u + 0.18, 0.2, '#D8DCDF'); }
+  }},
+  hurdle: {aspect: 1.1, shade: null, draw(c, w, h) {
+    R(c, w, h, 0.02, 0, 0.98, 0.12, '#F4F4F0');
+    for (let i = 0; i < 5; i++) R(c, w, h, 0.02 + i * 0.192, 0, 0.02 + i * 0.192 + 0.096, 0.12, '#1E1F22');
+    c.strokeStyle = EDGE; c.lineWidth = 1; c.strokeRect(0.02 * w, 0, 0.96 * w, 0.12 * h);
+    for (const u of [0.06, 0.9]) R(c, w, h, u, 0.12, u + 0.04, 0.96, '#9AA1A8');
+    R(c, w, h, 0, 0.94, 0.3, 1, '#6B737C'); R(c, w, h, 0.7, 0.94, 1, 1, '#6B737C');
+  }},
+  tennisnet: {aspect: 5.5, shade: null, draw(c, w, h) {
+    c.beginPath(); c.moveTo(0.01 * w, 0.06 * h); c.quadraticCurveTo(0.5 * w, 0.28 * h, 0.99 * w, 0.06 * h); c.lineTo(0.99 * w, h); c.lineTo(0.01 * w, h); c.closePath();
+    c.save(); c.clip();
+    c.strokeStyle = 'rgba(60,70,80,.55)'; c.lineWidth = 0.6;
+    for (let u = 0; u < 1; u += 0.012) L(c, w, h, [[u, 0], [u, 1]], 'rgba(60,70,80,.5)', 0.6);
+    for (let v = 0; v < 1; v += 0.08) L(c, w, h, [[0, v], [1, v]], 'rgba(60,70,80,.5)', 0.6);
+    c.restore();
+    c.lineWidth = Math.max(1, h * 0.05); c.strokeStyle = '#F4F4F0';
+    c.beginPath(); c.moveTo(0.01 * w, 0.06 * h); c.quadraticCurveTo(0.5 * w, 0.28 * h, 0.99 * w, 0.06 * h); c.stroke();
+    R(c, w, h, 0, 0, 0.012, 1, '#2F5D3A'); R(c, w, h, 0.988, 0, 1, 1, '#2F5D3A');
+  }},
+  beam: {aspect: 3.2, shade: null, draw(c, w, h) {
+    R(c, w, h, 0, 0, 1, 0.13, '#C9A57B');
+    for (const u of [0.12, 0.84]) { fillP(c, w, h, [[u, 0.13], [u + 0.04, 0.13], [u + 0.06, 0.94], [u - 0.02, 0.94]], '#8A9199'); R(c, w, h, u - 0.06, 0.94, u + 0.1, 1, '#6B737C'); }
+  }},
+  vending: {aspect: 0.5, shade: 0.6, draw(c, w, h) {
+    R(c, w, h, 0, 0, 1, 1, '#C8352B');
+    R(c, w, h, 0.06, 0.05, 0.7, 0.75, '#1E2A33');
+    const cols = ['#F2C230', '#2F6DB5', '#23905A', '#F4F4F0'];
+    for (let r = 0; r < 5; r++) for (let k = 0; k < 4; k++) R(c, w, h, 0.1 + k * 0.15, 0.08 + r * 0.13, 0.19 + k * 0.15, 0.17 + r * 0.13, cols[(r + k) % 4]);
+    R(c, w, h, 0.76, 0.1, 0.94, 0.3, '#2A2D31');
+    R(c, w, h, 0.1, 0.82, 0.66, 0.92, '#1E2126');
+  }},
+  rover: {aspect: 1.4, shade: null, draw(c, w, h) {
+    R(c, w, h, 0.16, 0.44, 0.84, 0.66, '#E9EAEC');
+    R(c, w, h, 0.16, 0.44, 0.84, 0.48, '#C9A24A');
+    R(c, w, h, 0.66, 0.04, 0.7, 0.44, '#B9BEC3');
+    R(c, w, h, 0.6, 0, 0.78, 0.1, '#D8DADC'); E(c, w, h, 0.66, 0.05, 0.02, 0.03, '#1E2126');
+    L(c, w, h, [[0.2, 0.44], [0.12, 0.3], [0.04, 0.34]], '#9AA1A8', Math.max(1, h * 0.02));
+    L(c, w, h, [[0.18, 0.66], [0.14, 0.82]], '#9AA1A8', Math.max(1, h * 0.02));
+    L(c, w, h, [[0.5, 0.66], [0.5, 0.82]], '#9AA1A8', Math.max(1, h * 0.02));
+    L(c, w, h, [[0.82, 0.66], [0.86, 0.82]], '#9AA1A8', Math.max(1, h * 0.02));
+    for (const u of [0.14, 0.5, 0.86]) { E(c, w, h, u, 0.88, 0.08, 0.12, '#3A3F45'); E(c, w, h, u, 0.88, 0.035, 0.05, '#9AA1A8'); }
+    R(c, w, h, 0.16, 0.66, 0.84, 0.7, '#9AA1A8');
+  }},
+  abrams: {aspect: 3.2, shade: null, draw(c, w, h) {
+    const g = '#8C8663', d = '#6E6A4E';
+    fillP(c, w, h, [[0.02, 0.62], [0.1, 0.5], [0.92, 0.5], [0.99, 0.62], [0.92, 0.98], [0.08, 0.98]], d);
+    for (let u = 0.12; u < 0.9; u += 0.1) E(c, w, h, u, 0.8, 0.04, 0.12, '#3F3C2F');
+    R(c, w, h, 0.04, 0.46, 0.96, 0.56, g);
+    fillP(c, w, h, [[0.3, 0.46], [0.34, 0.16], [0.7, 0.14], [0.78, 0.2], [0.8, 0.46]], g);
+    R(c, w, h, 0.0, 0.26, 0.34, 0.31, g);
+    R(c, w, h, 0.56, 0, 0.62, 0.14, '#5E5A42');
+  }},
+  wrightflyer: {aspect: 4.4, shade: null, draw(c, w, h) {
+    const cl = '#E9DFC6', wd = '#8A6B45';
+    R(c, w, h, 0.05, 0.0, 0.95, 0.05, cl);
+    R(c, w, h, 0.05, 0.62, 0.95, 0.67, cl);
+    for (let u = 0.08; u < 0.95; u += 0.07) L(c, w, h, [[u, 0.05], [u, 0.62]], wd, Math.max(0.6, w * 0.002));
+    R(c, w, h, 0.0, 0.22, 0.06, 0.26, cl); R(c, w, h, 0.0, 0.42, 0.06, 0.46, cl);
+    L(c, w, h, [[0.06, 0.24], [0.22, 0.2]], wd, 0.8); L(c, w, h, [[0.06, 0.44], [0.22, 0.62]], wd, 0.8);
+    R(c, w, h, 0.9, 0.1, 0.99, 0.55, cl);
+    for (const u of [0.35, 0.65]) L(c, w, h, [[u, 0.67], [u - 0.02, 0.98]], wd, Math.max(0.6, w * 0.003));
+    R(c, w, h, 0.1, 0.96, 0.9, 1, wd);
+  }},
+  clockface: {aspect: 1, shade: null, draw(c, w, h) {
+    E(c, w, h, 0.5, 0.5, 0.5, 0.5, '#C9A24A');
+    E(c, w, h, 0.5, 0.5, 0.44, 0.44, '#F6F1E3');
+    c.fillStyle = '#26303A';
+    for (let i = 0; i < 12; i++) { const a = i * Math.PI / 6; c.beginPath(); c.arc((0.5 + Math.cos(a) * 0.37) * w, (0.5 + Math.sin(a) * 0.37) * h, Math.max(0.6, w * 0.02), 0, 7); c.fill(); }
+    L(c, w, h, [[0.5, 0.5], [0.5, 0.18]], '#26303A', Math.max(1, w * 0.03));
+    L(c, w, h, [[0.5, 0.5], [0.7, 0.6]], '#26303A', Math.max(1, w * 0.04));
+    c.strokeStyle = 'rgba(40,40,40,.2)'; c.lineWidth = Math.max(0.5, w * 0.005);
+    for (let i = 0; i < 24; i++) { const a = i * Math.PI / 12; L(c, w, h, [[0.5 + Math.cos(a) * 0.1, 0.5 + Math.sin(a) * 0.1], [0.5 + Math.cos(a) * 0.3, 0.5 + Math.sin(a) * 0.3]], 'rgba(40,40,40,.15)', Math.max(0.5, w * 0.004)); }
+  }},
+  apollolm: {aspect: 1.25, shade: null, draw(c, w, h) {
+    for (const s of [-1, 1]) { L(c, w, h, [[0.5 + s * 0.22, 0.62], [0.5 + s * 0.44, 0.94]], '#B9BEC3', Math.max(1, w * 0.015)); E(c, w, h, 0.5 + s * 0.44, 0.96, 0.06, 0.03, '#9AA1A8'); }
+    L(c, w, h, [[0.5, 0.7], [0.5, 0.92]], '#B9BEC3', Math.max(1, w * 0.012));
+    fillP(c, w, h, [[0.24, 0.52], [0.76, 0.52], [0.8, 0.74], [0.2, 0.74]], '#D9A441');
+    fillP(c, w, h, [[0.3, 0.52], [0.34, 0.14], [0.52, 0.06], [0.7, 0.14], [0.72, 0.52]], '#C9CDD1', EDGE);
+    fillP(c, w, h, [[0.38, 0.2], [0.46, 0.16], [0.47, 0.28], [0.39, 0.3]], '#2A3038');
+    R(c, w, h, 0.56, 0, 0.58, 0.07, '#9AA1A8');
+    E(c, w, h, 0.62, 0.02, 0.05, 0.02, '#D8DADC');
+  }},
+  minetruck: {aspect: 1.95, shade: null, draw(c, w, h) {
+    const y = '#E8B312';
+    fillP(c, w, h, [[0.08, 0.0], [0.98, 0.1], [0.98, 0.42], [0.2, 0.44], [0.08, 0.2]], y);
+    R(c, w, h, 0.02, 0.2, 0.2, 0.44, y);
+    R(c, w, h, 0.04, 0.24, 0.12, 0.34, '#2A3038');
+    R(c, w, h, 0.02, 0.44, 0.98, 0.54, '#3A3F45');
+    for (const u of [0.18, 0.66, 0.84]) { E(c, w, h, u, 0.76, 0.14, 0.24, '#1E2126'); E(c, w, h, u, 0.76, 0.06, 0.1, '#6B737C'); }
+    L(c, w, h, [[0.02, 0.48], [0.02, 0.3]], '#6B737C', Math.max(1, w * 0.006));
+  }},
+  greatwall: {aspect: 3.2, shade: null, draw(c, w, h) {
+    const s = '#A89A82';
+    R(c, w, h, 0, 0.12, 1, 1, s);
+    for (let u = 0; u < 1; u += 0.06) R(c, w, h, u, 0, u + 0.035, 0.12, s);
+    R(c, w, h, 0.6, 0, 0.9, 1, '#9B8D75');
+    c.fillStyle = 'rgba(70,60,45,.18)';
+    for (let v = 0.2; v < 1; v += 0.1) c.fillRect(0, v * h, w, Math.max(0.5, h * 0.008));
+    R(c, w, h, 0.7, 0.3, 0.8, 0.55, '#5E5443');
+  }},
+  delicatearch: {aspect: 1.05, shade: null, draw(c, w, h) {
+    c.beginPath();
+    c.moveTo(0.05 * w, h); c.lineTo(0.12 * w, 0.4 * h); c.quadraticCurveTo(0.2 * w, -0.05 * h, 0.55 * w, 0.02 * h);
+    c.quadraticCurveTo(0.88 * w, 0.05 * h, 0.9 * w, 0.4 * h); c.lineTo(0.96 * w, h);
+    c.lineTo(0.76 * w, h); c.lineTo(0.72 * w, 0.42 * h); c.quadraticCurveTo(0.6 * w, 0.2 * h, 0.44 * w, 0.24 * h); c.quadraticCurveTo(0.3 * w, 0.28 * h, 0.28 * w, 0.5 * h); c.lineTo(0.26 * w, h); c.closePath();
+    c.fillStyle = '#C8683A'; c.fill();
+    R(c, w, h, 0.0, 0.95, 1, 1, '#B5825A');
+    c.fillStyle = 'rgba(90,35,15,.2)'; for (let v = 0.1; v < 1; v += 0.08) c.fillRect(0, v * h, w, Math.max(0.5, h * 0.01));
+  }},
+  orbiter: {aspect: 1.6, shade: null, draw(c, w, h) {
+    fillP(c, w, h, [[0.8, 0.48], [0.9, 0.0], [0.98, 0.0], [0.99, 0.48]], '#F2F2EF', EDGE);
+    c.beginPath(); c.moveTo(0.02 * w, 0.66 * h); c.quadraticCurveTo(0.04 * w, 0.44 * h, 0.2 * w, 0.42 * h); c.lineTo(0.98 * w, 0.44 * h); c.lineTo(0.98 * w, 0.76 * h); c.lineTo(0.06 * w, 0.76 * h); c.closePath();
+    c.fillStyle = '#F2F2EF'; c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke();
+    fillP(c, w, h, [[0.02, 0.66], [0.98, 0.7], [0.98, 0.76], [0.06, 0.76]], '#23272B');
+    fillP(c, w, h, [[0.08, 0.5], [0.16, 0.45], [0.18, 0.52], [0.1, 0.54]], '#23272B');
+    fillP(c, w, h, [[0.4, 0.7], [0.94, 0.7], [0.94, 0.8], [0.5, 0.8]], '#3A4047');
+    for (const u of [0.18, 0.72]) { L(c, w, h, [[u, 0.76], [u, 0.92]], '#6B737C', Math.max(1, w * 0.006)); E(c, w, h, u, 0.95, 0.02, 0.05, '#1E2126'); }
+  }},
+  an225: {aspect: 4.6, shade: null, draw(c, w, h) {
+    for (const u of [0.84, 0.94]) fillP(c, w, h, [[u, 0.32], [u + 0.02, 0.0], [u + 0.05, 0.0], [u + 0.05, 0.32]], '#E7EAEE', EDGE);
+    R(c, w, h, 0.82, 0.28, 0.99, 0.34, '#C9CED4');
+    c.beginPath(); c.moveTo(0.03 * w, 0.78 * h); c.bezierCurveTo(0.0, 0.7 * h, 0.01 * w, 0.4 * h, 0.1 * w, 0.36 * h);
+    c.lineTo(0.8 * w, 0.36 * h); c.lineTo(0.99 * w, 0.4 * h); c.lineTo(0.99 * w, 0.46 * h); c.lineTo(0.8 * w, 0.78 * h); c.closePath();
+    c.fillStyle = '#F2F3F5'; c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke();
+    R(c, w, h, 0.03, 0.56, 0.8, 0.6, '#E0B83A'); R(c, w, h, 0.03, 0.6, 0.8, 0.64, '#3A6FB0');
+    fillP(c, w, h, [[0.3, 0.36], [0.56, 0.34], [0.6, 0.39], [0.3, 0.41]], '#B9C0C7');
+    for (const u of [0.36, 0.44, 0.52]) E(c, w, h, u, 0.46, 0.025, 0.05, '#C3CAD1', EDGE);
+    for (let u = 0.2; u < 0.74; u += 0.035) { c.beginPath(); c.arc(u * w, 0.92 * h, 0.07 * h, 0, 7); c.fillStyle = '#2A3038'; c.fill(); }
+    R(c, w, h, 0.2, 0.78, 0.72, 0.86, '#6B737C');
+  }},
+  luxor: {aspect: 0.14, shade: 0.5, draw(c, w, h) {
+    fillP(c, w, h, [[0.2, 0.08], [0.8, 0.08], [1, 1], [0, 1]], '#D9BE8A', EDGE);
+    fillP(c, w, h, [[0.2, 0.08], [0.5, 0], [0.8, 0.08]], '#D9A933');
+    c.fillStyle = 'rgba(110,80,40,.35)';
+    for (let v = 0.12; v < 0.96; v += 0.03) { c.fillRect(0.4 * w, v * h, 0.06 * w, Math.max(0.5, h * 0.012)); c.fillRect(0.54 * w, (v + 0.01) * h, 0.06 * w, Math.max(0.5, h * 0.01)); }
+  }},
+  gatewayindia: {aspect: 1.3, shade: 0.55, draw(c, w, h) {
+    const s = '#D9BE8E';
+    R(c, w, h, 0, 0.2, 1, 1, s);
+    c.beginPath(); c.moveTo(0.36 * w, h); c.lineTo(0.36 * w, 0.52 * h); c.quadraticCurveTo(0.5 * w, 0.3 * h, 0.64 * w, 0.52 * h); c.lineTo(0.64 * w, h); c.closePath(); c.fillStyle = '#6B5A40'; c.fill();
+    for (const u of [0.1, 0.78]) { c.beginPath(); c.moveTo(u * w, 0.9 * h); c.lineTo(u * w, 0.62 * h); c.quadraticCurveTo((u + 0.06) * w, 0.52 * h, (u + 0.12) * w, 0.62 * h); c.lineTo((u + 0.12) * w, 0.9 * h); c.closePath(); c.fillStyle = '#7C694B'; c.fill(); }
+    R(c, w, h, 0, 0.16, 1, 0.22, '#C7AB7B');
+    for (const u of [0, 0.3, 0.6, 0.86]) { R(c, w, h, u + 0.02, 0.04, u + 0.12, 0.16, s); fillP(c, w, h, [[u + 0.02, 0.04], [u + 0.07, 0], [u + 0.12, 0.04]], '#C7AB7B'); }
+  }},
+  belem: {aspect: 0.62, shade: 0.55, draw(c, w, h) {
+    const s = '#EDE6D6';
+    R(c, w, h, 0, 0.62, 1, 1, s);
+    for (let u = 0; u < 1; u += 0.1) R(c, w, h, u, 0.58, u + 0.06, 0.62, s);
+    R(c, w, h, 0.18, 0.08, 0.82, 0.62, s);
+    for (let u = 0.18; u < 0.82; u += 0.1) R(c, w, h, u, 0.04, u + 0.06, 0.08, s);
+    for (const u of [0.14, 0.8]) { R(c, w, h, u, 0.1, u + 0.06, 0.2, s); E(c, w, h, u + 0.03, 0.09, 0.04, 0.03, '#D8CDB5'); }
+    R(c, w, h, 0.4, 0.2, 0.6, 0.26, '#8A7E68'); R(c, w, h, 0.42, 0.36, 0.58, 0.44, '#8A7E68');
+    for (let u = 0.08; u < 0.92; u += 0.14) R(c, w, h, u, 0.7, u + 0.06, 0.78, '#8A7E68');
+    c.strokeStyle = EDGE; c.lineWidth = 1; c.strokeRect(0.5, 0.62 * h, w - 1, 0.38 * h);
+  }},
+  hindenburg: {aspect: 6, shade: null, draw(c, w, h) {
+    c.beginPath(); c.moveTo(0.01 * w, 0.5 * h); c.bezierCurveTo(0.05 * w, -0.02 * h, 0.6 * w, 0.0, 0.8 * w, 0.1 * h); c.lineTo(0.97 * w, 0.42 * h); c.lineTo(0.97 * w, 0.58 * h); c.lineTo(0.8 * w, 0.9 * h); c.bezierCurveTo(0.6 * w, 1.0 * h, 0.05 * w, 1.02 * h, 0.01 * w, 0.5 * h); c.closePath();
+    c.fillStyle = '#C9CDD2'; c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke();
+    c.save(); c.clip(); c.fillStyle = 'rgba(0,0,0,.12)'; for (let u = 0.05; u < 1; u += 0.04) c.fillRect(u * w, 0, Math.max(0.5, w * 0.002), h); c.fillRect(0, 0.55 * h, w, 0.45 * h); c.restore();
+    fillP(c, w, h, [[0.84, 0.2], [0.99, 0.02], [0.99, 0.98], [0.84, 0.8]], '#B3B9C0');
+    R(c, w, h, 0.18, 0.92, 0.26, 1, '#8A9199');
+  }},
+  gullfoss: fallsArt({aspect: 2.2, rock: '#5E5A55', water: [[0.05, 0.6, 0.02, 0.4], [0.35, 0.9, 0.42, 0.94]], cliff: [[0, 1], [0, 0], [0.62, 0], [0.62, 0.42], [1, 0.42], [1, 1]], green: '#6F8F55', greenV: 0.96}),
+  seljalandsfoss: fallsArt({aspect: 1.1, rock: '#5C5A52', water: [[0.44, 0.52, 0.02, 0.94]], cliff: [[0, 1], [0.02, 0.05], [0.4, 0], [0.8, 0.02], [1, 0.1], [1, 1]], green: '#5E8A4A', greenV: 0.88}),
+  iguazu: fallsArt({aspect: 3.2, rock: '#6B5A48', water: [[0.02, 0.14, 0.02, 0.94], [0.18, 0.4, 0.02, 0.94], [0.46, 0.56, 0.02, 0.94], [0.6, 0.96, 0.02, 0.94]], cliff: [[0, 1], [0, 0], [1, 0], [1, 1]], green: '#2F6B34', greenV: 0.96}),
+  multnomah: fallsArt({aspect: 0.7, rock: '#4E5A4A', water: [[0.44, 0.52, 0.02, 0.72], [0.46, 0.56, 0.78, 0.94]], cliff: [[0, 1], [0.04, 0.05], [0.3, 0], [0.7, 0.02], [0.96, 0.08], [1, 1]], green: '#2F5E34', greenV: 0.74}),
+  kaieteur: fallsArt({aspect: 1.3, rock: '#6E5646', water: [[0.3, 0.62, 0.02, 0.94]], cliff: [[0, 1], [0, 0.02], [0.5, 0], [1, 0.02], [1, 1]], green: '#2F6B34', greenV: 0.9}),
+  tugela: fallsArt({aspect: 1.1, rock: '#7C6A58', water: [[0.4, 0.44, 0.02, 0.3], [0.42, 0.47, 0.32, 0.6], [0.44, 0.5, 0.62, 0.94]], cliff: [[0, 1], [0, 0.03], [0.3, 0], [0.8, 0], [1, 0.05], [1, 1]], green: '#4F7A40', greenV: 0.7}),
+  spasskaya: {aspect: 0.28, shade: 0.5, draw(c, w, h) {
+    const r = '#B8423A';
+    R(c, w, h, 0.05, 0.52, 0.95, 1, r);
+    R(c, w, h, 0.15, 0.3, 0.85, 0.52, r);
+    R(c, w, h, 0.25, 0.37, 0.75, 0.47, '#F2EDE0'); E(c, w, h, 0.5, 0.42, 0.18, 0.045, '#26303A'); E(c, w, h, 0.5, 0.42, 0.14, 0.035, '#F6F1E3');
+    R(c, w, h, 0.25, 0.22, 0.75, 0.3, '#F2EDE0');
+    fillP(c, w, h, [[0.22, 0.22], [0.5, 0.05], [0.78, 0.22]], '#2E6B4A');
+    fillP(c, w, h, [[0.5, 0], [0.54, 0.02], [0.5, 0.05], [0.46, 0.02]], '#C8231E');
+    R(c, w, h, 0.36, 0.78, 0.64, 1, '#6B2A25');
+    for (let u = 0.05; u < 0.95; u += 0.12) R(c, w, h, u, 0.49, u + 0.07, 0.52, r);
+  }},
+  brooklyn: {aspect: 3.4, shade: null, draw(c, w, h) {
+    const s = '#B9A382';
+    for (const side of [-1, 1]) {
+      const tx = side < 0 ? 0.28 : 0.72;
+      c.strokeStyle = '#6B737C'; c.lineWidth = Math.max(0.8, h * 0.012);
+      c.beginPath(); c.moveTo(tx * w, 0.08 * h); c.quadraticCurveTo((tx + side * 0.12) * w, 0.6 * h, (tx + side * 0.28) * w, 0.6 * h); c.stroke();
+    }
+    c.beginPath(); c.moveTo(0.28 * w, 0.08 * h); c.quadraticCurveTo(0.5 * w, 0.9 * h, 0.72 * w, 0.08 * h); c.stroke();
+    for (let u = 0.31; u < 0.7; u += 0.025) { const t = (u - 0.28) / 0.44; L(c, w, h, [[u, 0.62], [u, 0.08 + 1.64 * t - 1.64 * t * t]], 'rgba(107,115,124,.5)', 0.6); }
+    R(c, w, h, 0, 0.62, 1, 0.68, '#5F6870');
+    for (const u of [0.22, 0.66]) {
+      R(c, w, h, u, 0.06, u + 0.12, 1, s);
+      for (const k of [0.015, 0.065]) { c.beginPath(); c.moveTo((u + k) * w, 0.66 * h); c.lineTo((u + k) * w, 0.3 * h); c.quadraticCurveTo((u + k + 0.02) * w, 0.2 * h, (u + k + 0.04) * w, 0.3 * h); c.lineTo((u + k + 0.04) * w, 0.66 * h); c.closePath(); c.fillStyle = '#8A7A60'; c.fill(); }
+      R(c, w, h, u - 0.005, 0, u + 0.125, 0.06, '#A89272');
+    }
+  }},
+  capitol: {aspect: 1.5, shade: null, draw(c, w, h) {
+    const m = '#F2F0EA';
+    R(c, w, h, 0, 0.72, 1, 1, m); R(c, w, h, 0.1, 0.62, 0.9, 0.72, m);
+    grid(c, w, h, 0.02, 0.76, 0.98, 0.96, 16, 1, '#C9C3B4');
+    R(c, w, h, 0.3, 0.46, 0.7, 0.62, m);
+    for (let u = 0.32; u < 0.68; u += 0.04) R(c, w, h, u, 0.47, u + 0.015, 0.62, '#D8D2C4');
+    c.beginPath(); c.moveTo(0.34 * w, 0.47 * h); c.bezierCurveTo(0.34 * w, 0.22 * h, 0.66 * w, 0.22 * h, 0.66 * w, 0.47 * h); c.closePath(); c.fillStyle = m; c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke();
+    R(c, w, h, 0.46, 0.2, 0.54, 0.28, m);
+    R(c, w, h, 0.49, 0.03, 0.51, 0.2, '#7E735E');
+    E(c, w, h, 0.5, 0.03, 0.012, 0.03, '#7E735E');
+    c.strokeStyle = EDGE; c.strokeRect(0.5, 0.72 * h, w - 1, 0.28 * h);
+  }},
+  bagger: {aspect: 2.3, shade: null, draw(c, w, h) {
+    const y = '#6E7F8C', o = '#C9C3B4';
+    L(c, w, h, [[0.38, 0.5], [0.06, 0.2]], y, Math.max(1, h * 0.04));
+    c.strokeStyle = '#4E5B66'; c.lineWidth = Math.max(1, h * 0.02); c.beginPath(); c.arc(0.09 * w, 0.2 * h, 0.19 * h, 0, 7); c.stroke();
+    for (let i = 0; i < 10; i++) { const a = i * Math.PI / 5; R(c, w, h, 0.09 + Math.cos(a) * 0.075 - 0.01, 0.2 + Math.sin(a) * 0.17 - 0.02, 0.09 + Math.cos(a) * 0.075 + 0.01, 0.2 + Math.sin(a) * 0.17 + 0.02, '#3A4550'); }
+    fillP(c, w, h, [[0.3, 0.3], [0.52, 0.0], [0.56, 0.0], [0.62, 0.5], [0.3, 0.5]], y);
+    L(c, w, h, [[0.54, 0.02], [0.98, 0.4]], y, Math.max(1, h * 0.03));
+    L(c, w, h, [[0.54, 0.02], [0.3, 0.3]], y, Math.max(1, h * 0.015));
+    R(c, w, h, 0.28, 0.5, 0.78, 0.7, o);
+    R(c, w, h, 0.84, 0.36, 0.99, 0.6, o);
+    L(c, w, h, [[0.78, 0.6], [0.99, 0.6]], y, Math.max(1, h * 0.02));
+    R(c, w, h, 0.24, 0.72, 0.84, 1, '#2A3038');
+    for (let u = 0.28; u < 0.82; u += 0.06) E(c, w, h, u, 0.86, 0.02, 0.08, '#4E5B66');
+  }},
+  dover: cliffArt({aspect: 3.6, rock: '#F1EFE8', streak: 'rgba(120,120,110,.18)', top: '#6F9A55', edge: [[0, 0.06], [0.2, 0.02], [0.45, 0.0], [0.7, 0.04], [0.85, 0.12], [1, 0.2]], sea: true}),
+  moher: cliffArt({aspect: 3, rock: '#4A4A48', streak: 'rgba(0,0,0,.2)', top: '#4E8A45', edge: [[0, 0.14], [0.25, 0.08], [0.4, 0.02], [0.52, 0.0], [0.7, 0.06], [0.85, 0.14], [1, 0.3]], sea: true}),
+  preikestolen: cliffArt({aspect: 1.2, rock: '#6E6B66', streak: 'rgba(0,0,0,.18)', top: '#5E7F4B', edge: [[0, 0.02], [0.72, 0.0], [0.72, 0.12], [0.6, 0.2], [0.62, 0.6], [0.9, 0.9]], sea: true}),
+  trollwall: cliffArt({aspect: 1.8, rock: '#5F6168', streak: 'rgba(0,0,0,.2)', top: '#F4F7FA', edge: [[0, 0.3], [0.12, 0.08], [0.2, 0.14], [0.3, 0.0], [0.38, 0.1], [0.46, 0.04], [0.56, 0.12], [0.62, 0.06], [0.7, 0.6], [0.72, 1]]}),
+  thor: cliffArt({aspect: 1.1, rock: '#6A6660', streak: 'rgba(0,0,0,.2)', top: '#F4F7FA', edge: [[0, 0.4], [0.3, 0.1], [0.55, 0.0], [0.62, 0.02], [0.58, 0.5], [0.6, 1]]}),
+  grandcanyon: {aspect: 2.6, shade: null, draw(c, w, h) {
+    const bands = ['#C87D4A', '#B8663A', '#D4A06A', '#A95A34', '#C98B5A', '#8E4A2E'];
+    const left = [[0, 0], [0.3, 0], [0.32, 0.14], [0.36, 0.16], [0.38, 0.34], [0.42, 0.36], [0.44, 0.6], [0.47, 0.64], [0.48, 1], [0, 1]];
+    const right = [[1, 0], [0.7, 0], [0.68, 0.16], [0.64, 0.18], [0.62, 0.38], [0.58, 0.4], [0.56, 0.62], [0.53, 0.66], [0.52, 1], [1, 1]];
+    for (const side of [left, right]) {
+      c.save(); P(c, w, h, side); c.clip();
+      bands.forEach((col, i) => R(c, w, h, 0, i / bands.length, 1, (i + 1) / bands.length, col));
+      c.restore();
+    }
+    R(c, w, h, 0.47, 0.94, 0.53, 1, '#4F8DB8');
+    R(c, w, h, 0, 0, 0.3, 0.015, '#6F8B4A'); R(c, w, h, 0.7, 0, 1, 0.015, '#6F8B4A');
+  }},
+  wembley: {aspect: 2.4, shade: null, draw(c, w, h) {
+    c.lineWidth = Math.max(1, h * 0.03); c.strokeStyle = '#E9ECEF';
+    c.beginPath(); c.moveTo(0.1 * w, 0.8 * h); c.quadraticCurveTo(0.5 * w, -0.78 * h, 0.9 * w, 0.8 * h); c.stroke();
+    c.lineWidth = 0.6; c.strokeStyle = 'rgba(120,130,140,.5)';
+    for (let u = 0.25; u < 0.78; u += 0.05) { const t = (u - 0.1) / 0.8; c.beginPath(); c.moveTo(u * w, (0.8 * (1 - t) * (1 - t) - 1.56 * t * (1 - t) + 0.8 * t * t) * h); c.lineTo((0.3 + (u - 0.25) * 0.75) * w, 0.62 * h); c.stroke(); }
+    fillP(c, w, h, [[0.08, 1], [0.12, 0.66], [0.25, 0.6], [0.75, 0.6], [0.88, 0.66], [0.92, 1]], '#D9DCDF', EDGE);
+    R(c, w, h, 0.12, 0.66, 0.88, 0.7, '#8A949E');
+    grid(c, w, h, 0.14, 0.74, 0.86, 0.96, 14, 2, '#6F7A85');
+    R(c, w, h, 0.08, 0.97, 0.92, 1, '#9AA1A8');
+  }},
+  americas: towerArt({aspect: 0.2, base: 0.18, top: 0.16, shaftTop: 0.2, pods: [{v: 0.18, r: 0.48, h: 0.08}], color: '#D8D6CF'}),
+  kltower: towerArt({aspect: 0.14, base: 0.2, top: 0.12, shaftTop: 0.28, pods: [{v: 0.3, r: 0.46, h: 0.06, color: '#B9C4CF'}], color: '#D2D0CA'}),
+  orientalpearl: towerArt({aspect: 0.2, base: 0.08, top: 0.07, shaftTop: 0.2, legs: 0.6, pods: [{v: 0.62, r: 0.3, ball: true}, {v: 0.3, r: 0.2, ball: true}, {v: 0.2, r: 0.07, ball: true}], color: '#CFCDC6'}),
+  woolworth: {aspect: 0.3, shade: 0.5, draw(c, w, h) {
+    const s = '#E6E0D2';
+    R(c, w, h, 0, 0.55, 1, 1, s);
+    R(c, w, h, 0.2, 0.2, 0.8, 0.55, s);
+    R(c, w, h, 0.28, 0.12, 0.72, 0.2, s);
+    fillP(c, w, h, [[0.28, 0.12], [0.5, 0.0], [0.72, 0.12]], '#6E8A7A');
+    for (const u of [0.28, 0.66]) fillP(c, w, h, [[u, 0.2], [u + 0.03, 0.14], [u + 0.06, 0.2]], '#B7AE99');
+    c.fillStyle = 'rgba(90,80,60,.35)';
+    for (let u = 0.04; u < 0.98; u += 0.06) c.fillRect(u * w, 0.57 * h, Math.max(0.5, w * 0.012), 0.42 * h);
+    for (let u = 0.23; u < 0.78; u += 0.06) c.fillRect(u * w, 0.21 * h, Math.max(0.5, w * 0.012), 0.33 * h);
+  }},
+  millau: {aspect: 5, shade: null, draw(c, w, h) {
+    R(c, w, h, 0, 0.21, 1, 0.24, '#E9ECEF');
+    for (let i = 0; i < 7; i++) {
+      const u = 0.07 + i * 0.143;
+      const pierBottom = 1 - (i === 0 || i === 6 ? 0.35 : i === 1 || i === 5 ? 0.12 : 0);
+      fillP(c, w, h, [[u - 0.006, 0.24], [u + 0.006, 0.24], [u + 0.01, pierBottom], [u - 0.01, pierBottom]], '#D6D8DB');
+      fillP(c, w, h, [[u - 0.004, 0.21], [u, 0.0], [u + 0.004, 0.21]], '#C9CCD0');
+      for (let k = 1; k <= 5; k++) { L(c, w, h, [[u, 0.02 + k * 0.03], [u - k * 0.012, 0.21]], 'rgba(120,130,140,.6)', 0.5); L(c, w, h, [[u, 0.02 + k * 0.03], [u + k * 0.012, 0.21]], 'rgba(120,130,140,.6)', 0.5); }
+    }
+    fillP(c, w, h, [[0, 0.6], [0.12, 0.8], [0.3, 0.98], [0.7, 0.98], [0.88, 0.85], [1, 0.62], [1, 1], [0, 1]], '#6F8B55');
+  }},
+  bankofchina: {aspect: 0.22, shade: null, draw(c, w, h) {
+    R(c, w, h, 0.48, 0, 0.5, 0.14, '#B9C0C7'); R(c, w, h, 0.54, 0.03, 0.56, 0.14, '#B9C0C7');
+    fillP(c, w, h, [[0, 1], [0, 0.55], [0.5, 0.14], [1, 0.4], [1, 1]], '#8FA7BE');
+    fillP(c, w, h, [[0.5, 0.14], [1, 0.4], [1, 1], [0.5, 1]], '#6F89A3');
+    c.strokeStyle = '#E9EEF2'; c.lineWidth = Math.max(0.6, w * 0.02);
+    for (const v of [0.55, 0.78]) { c.beginPath(); c.moveTo(0, v * h); c.lineTo(w, (v + 0.2) * h); c.moveTo(w, v * h); c.lineTo(0, (v + 0.2) * h); c.stroke(); }
+    L(c, w, h, [[0.5, 0.14], [0.5, 1]], '#E9EEF2', Math.max(0.6, w * 0.02));
+  }},
+  park432: {aspect: 0.09, shade: 0.5, draw(c, w, h) {
+    R(c, w, h, 0, 0, 1, 1, '#E9E7E1');
+    c.fillStyle = '#4E5864';
+    for (let v = 0.01; v < 1; v += 0.012) for (const u of [0.08, 0.3, 0.54, 0.76]) c.fillRect(u * w, v * h, 0.16 * w, Math.max(0.5, h * 0.008));
+    for (const v of [0.18, 0.34, 0.5, 0.66, 0.82]) R(c, w, h, 0, v, 1, v + 0.012, '#2A3038');
+    c.strokeStyle = EDGE; c.lineWidth = 1; c.strokeRect(0.5, 0.5, w - 1, h - 1);
+  }},
+  shiprock: mountainArt({aspect: 1.9, rock: '#6A5446', rock2: 'rgba(30,20,15,.3)', ridge: [[0.1, 0.9], [0.22, 0.6], [0.3, 0.3], [0.36, 0.34], [0.42, 0.08], [0.46, 0.12], [0.5, 0], [0.54, 0.1], [0.58, 0.06], [0.64, 0.3], [0.72, 0.5], [0.8, 0.8], [0.9, 0.95]]}),
+  scafell: mountainArt({aspect: 2.8, rock: '#6F726B', ridge: [[0.08, 0.7], [0.25, 0.3], [0.4, 0.08], [0.5, 0], [0.62, 0.1], [0.78, 0.35], [0.94, 0.72]], green: '#6E8B55', greenV: 0.45}),
+  snowdon: mountainArt({aspect: 2.4, rock: '#6A6D66', ridge: [[0.06, 0.72], [0.22, 0.35], [0.34, 0.18], [0.42, 0.1], [0.5, 0], [0.56, 0.06], [0.68, 0.3], [0.8, 0.24], [0.94, 0.7]], green: '#5E8A4A', greenV: 0.5}),
+  diablo: mountainArt({aspect: 3, rock: '#9C8A6A', ridge: [[0.06, 0.8], [0.25, 0.4], [0.4, 0.1], [0.48, 0], [0.56, 0.06], [0.7, 0.3], [0.94, 0.78]], green: '#A5A15A', greenV: 0.3}),
+  mansfield: mountainArt({aspect: 3.2, rock: '#6E746C', ridge: [[0.05, 0.6], [0.2, 0.3], [0.35, 0.18], [0.5, 0.05], [0.58, 0], [0.7, 0.12], [0.85, 0.35], [0.96, 0.62]], green: '#3F6B3E', greenV: 0.2}),
+  mitchell: mountainArt({aspect: 3.2, rock: '#5F6A5E', ridge: [[0.05, 0.7], [0.25, 0.3], [0.42, 0.06], [0.5, 0], [0.58, 0.05], [0.75, 0.3], [0.95, 0.7]], green: '#2F5E34', greenV: 0.12}),
+  olympuswa: mountainArt({aspect: 2.2, rock: '#6A6F78', ridge: [[0.06, 0.8], [0.2, 0.45], [0.3, 0.3], [0.4, 0.1], [0.46, 0.14], [0.52, 0], [0.6, 0.12], [0.72, 0.35], [0.94, 0.8]], snow: 0.45, green: '#2F5E34', greenV: 0.75}),
+  hood: mountainArt({aspect: 1.8, rock: '#6B6F78', ridge: [[0.06, 0.9], [0.25, 0.5], [0.4, 0.12], [0.48, 0], [0.54, 0.05], [0.66, 0.3], [0.94, 0.9]], snow: 0.5, green: '#2F5E34', greenV: 0.82}),
+  teide: mountainArt({aspect: 2.8, rock: '#7A5C4A', rock2: 'rgba(40,25,15,.25)', ridge: [[0.04, 0.9], [0.2, 0.6], [0.38, 0.35], [0.44, 0.1], [0.5, 0], [0.56, 0.1], [0.62, 0.35], [0.8, 0.6], [0.96, 0.9]], snow: 0.08}),
+  aoraki: mountainArt({aspect: 1.8, rock: '#5E636C', ridge: [[0.06, 0.85], [0.2, 0.5], [0.34, 0.22], [0.44, 0.06], [0.5, 0], [0.56, 0.08], [0.66, 0.1], [0.76, 0.4], [0.94, 0.85]], snow: 0.55}),
+  maunaloa: mountainArt({aspect: 5, rock: '#4E4440', rock2: 'rgba(20,15,10,.25)', ridge: [[0.04, 0.9], [0.2, 0.4], [0.38, 0.08], [0.47, 0], [0.53, 0.02], [0.62, 0.08], [0.8, 0.4], [0.96, 0.9]], snow: 0.05, green: '#5E7F4B', greenV: 0.85}),
+  pikes: mountainArt({aspect: 2.4, rock: '#8C6F5E', ridge: [[0.05, 0.8], [0.22, 0.4], [0.38, 0.1], [0.46, 0], [0.56, 0.02], [0.66, 0.2], [0.8, 0.45], [0.95, 0.8]], snow: 0.15, green: '#3E6B45', greenV: 0.6}),
+  shasta: mountainArt({aspect: 2.2, rock: '#6A6560', ridge: [[0.04, 0.95], [0.22, 0.5], [0.34, 0.2], [0.4, 0.14], [0.46, 0.02], [0.5, 0], [0.56, 0.06], [0.7, 0.35], [0.96, 0.95]], snow: 0.5, green: '#3E6B45', greenV: 0.86}),
+  vinson: mountainArt({aspect: 2.6, rock: '#4F5561', ridge: [[0.05, 0.8], [0.2, 0.45], [0.3, 0.3], [0.42, 0.06], [0.5, 0], [0.58, 0.05], [0.68, 0.2], [0.82, 0.42], [0.95, 0.8]], snow: 0.8}),
+  ararat: mountainArt({aspect: 2.8, rock: '#6E5A4E', ridge: [[0.04, 0.95], [0.25, 0.5], [0.4, 0.12], [0.48, 0], [0.56, 0.05], [0.66, 0.3], [0.78, 0.45], [0.84, 0.4], [0.96, 0.95]], snow: 0.35}),
+  logan: mountainArt({aspect: 2.8, rock: '#565C68', ridge: [[0.04, 0.8], [0.14, 0.4], [0.24, 0.12], [0.34, 0.08], [0.44, 0.02], [0.5, 0], [0.6, 0.04], [0.72, 0.1], [0.84, 0.4], [0.96, 0.8]], snow: 0.75}),
+  lhotse: mountainArt({aspect: 1.9, rock: '#4E535C', rock2: 'rgba(15,18,25,.3)', ridge: [[0.06, 0.85], [0.2, 0.5], [0.3, 0.3], [0.38, 0.1], [0.44, 0.06], [0.5, 0], [0.56, 0.08], [0.64, 0.04], [0.72, 0.25], [0.94, 0.85]], snow: 0.4}),
+  kangchenjunga: mountainArt({aspect: 2.4, rock: '#555A64', rock2: 'rgba(15,18,25,.3)', ridge: [[0.05, 0.85], [0.18, 0.45], [0.28, 0.12], [0.34, 0.16], [0.42, 0.04], [0.48, 0], [0.54, 0.08], [0.62, 0.05], [0.72, 0.2], [0.84, 0.45], [0.95, 0.85]], snow: 0.5}),
+});
+
 /* ---------------- rules ---------------- */
 const ROUNDS = 10, SECONDS = 20, REVEAL_MS = 9000;
-const G_MIN = 10 ** -6.5, G_MAX = 10 ** 6.5, SLIDER_STEPS = 4000;
+const G_MIN = 1 / 100, G_MAX = 100, SLIDER_STEPS = 4000;
 const COLORS = ['#E4572E','#3A7FD0','#23905A','#9B5DE5','#D99A00','#D6337F','#12A4B6','#7F8F2A','#C0632B','#5C6BC0'];
 const EMOJI_FONT = '"Noto Color Emoji","Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol",sans-serif';
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1772,8 +2272,16 @@ function drawStage(cv, s) {
   const rw = mr.w / mr.h, rh = 1;
   const aw = mt.w / mt.h, ah = 1;
   const k = Math.min((W - 2 * pad - gap) / (rw + aw * s.fit), (ground - top) / Math.max(rh, ah * s.fit));
-  const total = (rw + aw * s.fit) * k + gap;
-  const x0 = (W - total) / 2, x1 = x0 + rw * k + gap;
+  // reference sits left of a fixed centre line, the object being resized grows rightward from it
+  const lw = rw * k, rwid = aw * s.fit * k;
+  const mid = Math.min(Math.max(W / 2, pad + lw + gap / 2), W - pad - rwid - gap / 2);
+  const x0 = mid - gap / 2 - lw, x1 = mid + gap / 2;
+  c.save(); c.strokeStyle = T.line; c.lineWidth = 1; c.setLineDash([4, 5]);
+  c.beginPath(); c.moveTo(mid + 0.5, top - 6); c.lineTo(mid + 0.5, ground); c.stroke(); c.restore();
+  c.save(); c.font = '600 10px "IBM Plex Mono", ui-monospace, monospace'; c.fillStyle = T.muted; c.textBaseline = 'alphabetic';
+  c.textAlign = 'right'; c.fillText('REFERENCE', mid - 12, ground + 27);
+  c.textAlign = 'left'; c.fillText(s.tagR || 'RESIZE THIS', mid + 12, ground + 27);
+  c.restore();
 
   drawEmoji(c, s.ref, mr, k, x0, ground, 1);
   bracket(c, s.ref, x0, rw * k, rh * k, ground, 'left', T.ink, false);
@@ -1897,8 +2405,8 @@ const activePlayers = () => players.filter(p => p.online !== false);
 
 function makeRounds(n) {
   const used = new Set(), out = [];
-  // 40% close pairs (1.6x-6x), 30% far (6x-100x), 30% very far (over 100x, e.g. a bird next to a mountain)
-  const bands = Array.from({length: n}, (_, i) => i < Math.round(n * 0.4) ? [1.6, 6] : i < Math.round(n * 0.7) ? [6, 100] : [100, Infinity]);
+  // every pair stays readable: about 35% near 2x (1.5x-3x), 35% near 5x (3x-8x), 30% near 10-20x (8x-25x)
+  const bands = Array.from({length: n}, (_, i) => i < Math.round(n * 0.35) ? [1.5, 3] : i < Math.round(n * 0.7) ? [3, 8] : [8, 25]);
   for (let i = bands.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [bands[i], bands[j]] = [bands[j], bands[i]]; }
   const tryPick = (lo, hi) => {
     for (let t = 0; t < 80; t++) {
@@ -1916,7 +2424,7 @@ function makeRounds(n) {
     }
     return false;
   };
-  for (const [lo, hi] of bands) if (!tryPick(lo, hi)) tryPick(1.6, Infinity);
+  for (const [lo, hi] of bands) if (!tryPick(lo, hi)) tryPick(1.5, 25);
   return out;
 }
 
@@ -2260,7 +2768,7 @@ function stageState() {
     const tgtLines = [[`${fmtLen(tgt.s)} tall`, 'green']];
     if (guess != null) tgtLines.push([`you: ${fmtLen(guess * ref.s)}`, 'red']);
     const near = x => (x != null && x <= r * 3 ? x : r); // keep the true answer in view even if the guess was wildly too big
-    return {ref, tgt, g, fit: Math.max(r, near(guess), near(a ? a.from : null)), ghost: guess, refLines, tgtLines, tgtColor: 'green'};
+    return {ref, tgt, g, fit: Math.max(r, near(guess), near(a ? a.from : null)), ghost: guess, refLines, tgtLines, tgtColor: 'green', tagR: 'TRUE HEIGHT'};
   }
   return {ref, tgt, g: local.g, fit: local.g, ghost: null, refLines, tgtLines: [['? tall', 'measure']], tgtColor: 'measure'};
 }
@@ -2274,7 +2782,7 @@ function renderRound() {
   $('#rb-of').textContent = '/' + room.rounds.length;
   const cur = scoreRec(mine(), room.round);
   $('#rb-score').textContent = totalOf(mine()) - (reveal || !cur ? 0 : cur.p || 0);
-  $('#prompt').innerHTML = `How tall is <em>${esc(tgt.a.split(',')[0])}</em> next to <em>${esc(ref.a.split(',')[0])}</em>?`;
+  $('#prompt').innerHTML = `Next to <em>${esc(ref.a.split(',')[0])}</em>, how tall is <em>${esc(tgt.a.split(',')[0])}</em>?`;
 
   $('#play-ui').hidden = reveal;
   $('#reveal').hidden = !reveal;
