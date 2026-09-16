@@ -455,7 +455,7 @@ const RAW = [
 const cap0 = s => s.charAt(0).toUpperCase() + s.slice(1);
 const OBJ = RAW.map(([id, e, a, s, note, label]) => {
   const noun = a.replace(/^(an?|the) /, '');
-  return {id, e, a, s, note, noun, label: label || cap0(noun), ax: 'h'};
+  return {id, e, a, s, note, noun, label: label || cap0(noun)};
 });
 const BY = Object.fromEntries(OBJ.map(o => [o.id, o]));
 
@@ -863,7 +863,7 @@ function drawArt(c, o, hPx, left, ground, alpha) {
 }
 function drawEmoji(c, o, m, axisPx, left, ground, alpha) {
   if (ART[o.id]) { drawArt(c, o, axisPx, left, ground, alpha); return; }
-  const fs = axisPx / (o.ax === 'w' ? m.w : m.h);
+  const fs = axisPx / m.h;
   if (!(fs > 0.2)) return;
   c.save();
   c.globalAlpha = alpha;
@@ -875,17 +875,11 @@ function bracket(c, o, left, w, h, ground, side, color, dashed, off = 0) {
   c.save();
   c.strokeStyle = color; c.lineWidth = 1.5; c.setLineDash(dashed ? [4, 3] : []);
   c.beginPath();
-  if (o.ax === 'w') {
-    const y = ground + 15 + off;
-    c.moveTo(left, y); c.lineTo(left + w, y);
-    c.moveTo(left, y - 5); c.lineTo(left, y + 5);
-    c.moveTo(left + w, y - 5); c.lineTo(left + w, y + 5);
-  } else {
-    const x = side === 'left' ? left - 10 - off : left + w + 10 + off;
-    c.moveTo(x, ground); c.lineTo(x, ground - h);
-    c.moveTo(x - 5, ground - h); c.lineTo(x + 5, ground - h);
-    c.moveTo(x - 5, ground); c.lineTo(x + 5, ground);
-  }
+  // height bracket: a vertical line from the ground to the top of the object
+  const x = side === 'left' ? left - 10 - off : left + w + 10 + off;
+  c.moveTo(x, ground); c.lineTo(x, ground - h);
+  c.moveTo(x - 5, ground - h); c.lineTo(x + 5, ground - h);
+  c.moveTo(x - 5, ground); c.lineTo(x + 5, ground);
   c.stroke();
   c.restore();
 }
@@ -918,8 +912,9 @@ function drawStage(cv, s) {
 
   const pad = 30, top = 70, gap = Math.min(48, W * 0.08);
   const mr = meas(s.ref), mt = meas(s.tgt);
-  const rw = s.ref.ax === 'w' ? 1 : mr.w / mr.h, rh = s.ref.ax === 'h' ? 1 : mr.h / mr.w;
-  const aw = s.tgt.ax === 'w' ? 1 : mt.w / mt.h, ah = s.tgt.ax === 'h' ? 1 : mt.h / mt.w;
+  // everything is scaled by height: 1 unit = the reference's height; widths follow each drawing's shape
+  const rw = mr.w / mr.h, rh = 1;
+  const aw = mt.w / mt.h, ah = 1;
   const k = Math.min((W - 2 * pad - gap) / (rw + aw * s.fit), (ground - top) / Math.max(rh, ah * s.fit));
   const total = (rw + aw * s.fit) * k + gap;
   const x0 = (W - total) / 2, x1 = x0 + rw * k + gap;
