@@ -23,7 +23,7 @@
   --paper:#E8EDF0; --grid:rgba(20,33,44,.05); --surface:#FFFFFF; --surface-2:#F1F4F6;
   --ink:#14212C; --muted:#586874; --line:#C8D2D9;
   --tape:#F2B21B; --tape-ink:#261C02; --measure:#2D69AC;
-  --stage:#F8FAFB; --stage-grid:#E5EBEF; --focus:#2D69AC; --figure:#9AA6B1;
+  --stage:#F8FAFB; --stage-grid:#E5EBEF; --focus:#2D69AC; --figure:#9AA6B1; --accent:#EE5E33; --accent-ink:#2A0C02;
   --shadow:0 1px 0 rgba(20,33,44,.05),0 10px 28px -16px rgba(20,33,44,.28);
   --shadow-hover:0 1px 0 rgba(20,33,44,.05),0 18px 36px -18px rgba(20,33,44,.4);
   --display:"Big Shoulders Display","Arial Narrow","Roboto Condensed",Impact,sans-serif;
@@ -36,7 +36,7 @@
     --paper:#0C1722; --grid:rgba(120,170,220,.06); --surface:#122130; --surface-2:#172a3b;
     --ink:#E3EBF1; --muted:#8FA1B0; --line:#26394B;
     --tape:#F4BE36; --tape-ink:#261C02; --measure:#72AAE8;
-    --stage:#0F1E2C; --stage-grid:#182B3D; --focus:#72AAE8; --figure:#5E7080;
+    --stage:#0F1E2C; --stage-grid:#182B3D; --focus:#72AAE8; --figure:#5E7080; --accent:#F7815C; --accent-ink:#2A0C02;
     --shadow:0 1px 0 rgba(0,0,0,.2),0 12px 30px -16px rgba(0,0,0,.6);
     --shadow-hover:0 1px 0 rgba(0,0,0,.2),0 20px 38px -18px rgba(0,0,0,.75);
     color-scheme:dark;
@@ -46,7 +46,7 @@
   --paper:#0C1722; --grid:rgba(120,170,220,.06); --surface:#122130; --surface-2:#172a3b;
   --ink:#E3EBF1; --muted:#8FA1B0; --line:#26394B;
   --tape:#F4BE36; --tape-ink:#261C02; --measure:#72AAE8;
-  --stage:#0F1E2C; --stage-grid:#182B3D; --focus:#72AAE8; --figure:#5E7080;
+  --stage:#0F1E2C; --stage-grid:#182B3D; --focus:#72AAE8; --figure:#5E7080; --accent:#F7815C; --accent-ink:#2A0C02;
   --shadow:0 1px 0 rgba(0,0,0,.2),0 12px 30px -16px rgba(0,0,0,.6);
   --shadow-hover:0 1px 0 rgba(0,0,0,.2),0 20px 38px -18px rgba(0,0,0,.75);
   color-scheme:dark;
@@ -112,10 +112,18 @@ a.game:hover .play svg{transform:translateX(3px)}
 .tgt{fill:var(--measure)}
 .tgt-mark{stroke:var(--measure)}
 .tag{font:600 9px var(--mono);letter-spacing:.08em;fill:var(--muted)}
-.qmark{font:900 96px var(--display);fill:var(--line)}
+.row-bg{fill:var(--surface);stroke:var(--line)}
+.row-lift{fill:var(--surface);stroke:var(--accent);stroke-width:1.5;filter:drop-shadow(0 6px 8px rgba(20,33,44,.22))}
+.rank{font:800 15px var(--display);fill:var(--muted)}
+.lift-rank{fill:var(--accent)}
+.bar{fill:var(--figure);opacity:.6}
+.lift-bar{fill:var(--accent);opacity:.85}
+.slide{animation:slide 4.2s ease-in-out infinite}
+@keyframes slide{0%,18%{transform:translate(18px,-12px)}42%,100%{transform:translate(0,0)}}
+.play-alt{background:var(--accent);color:var(--accent-ink)}
 .grow{transform-box:fill-box;transform-origin:0 100%;animation:grow 4.2s ease-in-out infinite}
 @keyframes grow{0%,100%{transform:scale(.62)}50%{transform:scale(1)}}
-@media (prefers-reduced-motion: reduce){ .grow{animation:none} .game,.play svg{transition:none} }
+@media (prefers-reduced-motion: reduce){ .grow,.slide{animation:none} .game,.play svg{transition:none} }
 
 @media (max-width:700px){
   .wrap{padding-block:16px 32px}
@@ -168,18 +176,35 @@ a.game:hover .play svg{transform:translateX(3px)}
       </div>
     </a>
 
-    <!-- Next game. When it's ready, swap this block for a copy of the How Big? card above
-         and point its href at the new game's folder (for example href="game-two/"). -->
-    <div class="game soon" aria-disabled="true">
-      <svg class="preview" viewBox="0 0 400 200" aria-hidden="true">
-        <text class="qmark" x="200" y="136" text-anchor="middle">?</text>
+    <!-- Order Up! -->
+    <a class="game" href="order-up/">
+      <svg class="preview" viewBox="0 0 400 200" role="img" aria-label="A list of five rows being sorted, with one row lifted and moving into place">
+        <rect class="stage-bg" width="400" height="200"/>
+        <g class="stage-grid" stroke-width="1">
+          <path d="M24 0V200M48 0V200M72 0V200M96 0V200M120 0V200M144 0V200M168 0V200M192 0V200M216 0V200M240 0V200M264 0V200M288 0V200M312 0V200M336 0V200M360 0V200M384 0V200"/>
+          <path d="M0 26H400M0 50H400M0 74H400M0 98H400M0 122H400M0 146H400M0 170H400"/>
+        </g>
+        <text class="tag" x="112" y="20">HIGHEST</text>
+        <text class="tag" x="112" y="193">LOWEST</text>
+        <g class="rows">
+          <g transform="translate(0 26)"><rect class="row-bg" x="104" y="0" width="192" height="26" rx="5"/><text class="rank" x="118" y="18">1</text><rect class="bar" x="136" y="10" width="112" height="6" rx="3"/></g>
+          <g transform="translate(0 58)"><rect class="row-bg" x="104" y="0" width="192" height="26" rx="5"/><text class="rank" x="118" y="18">2</text><rect class="bar" x="136" y="10" width="92" height="6" rx="3"/></g>
+          <g transform="translate(0 122)"><rect class="row-bg" x="104" y="0" width="192" height="26" rx="5"/><text class="rank" x="118" y="18">4</text><rect class="bar" x="136" y="10" width="54" height="6" rx="3"/></g>
+          <g transform="translate(0 154)"><rect class="row-bg" x="104" y="0" width="192" height="26" rx="5"/><text class="rank" x="118" y="18">5</text><rect class="bar" x="136" y="10" width="36" height="6" rx="3"/></g>
+          <g class="slide"><rect class="row-lift" x="104" y="90" width="192" height="26" rx="5"/><text class="rank lift-rank" x="118" y="108">3</text><rect class="bar lift-bar" x="136" y="100" width="72" height="6" rx="3"/></g>
+        </g>
       </svg>
       <div class="body">
-        <h2 class="name">Game two</h2>
-        <p class="desc">Something new is in the works. Check back soon.</p>
-        <span class="badge">Coming soon</span>
+        <h2 class="name">Order Up!</h2>
+        <p class="desc">Five things, one topic. Sort them from highest to lowest before the 30 seconds run out. Closest order wins.</p>
+        <div class="meta"><span>Solo or up to 16</span><span>10 rounds</span><span>16 topics</span></div>
+        <span class="play play-alt">Play Order Up!
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
       </div>
-    </div>
+    </a>
+
+    <!-- To add another game, copy one of the cards above and point its href at the new game's folder. -->
   </section>
 
   <p class="foot">Games run right in your browser. Rooms connect players directly, so the host needs to keep their tab open.</p>
